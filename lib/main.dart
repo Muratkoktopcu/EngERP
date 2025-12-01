@@ -1,28 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:eng_erp/architect.dart';
 
 void main() {
-  runApp(const IlkUygulamam());
+  runApp(const EngErp());
 }
 
-class IlkUygulamam extends StatelessWidget {
-  const IlkUygulamam({super.key});
+class EngErp extends StatelessWidget {
+  const EngErp({super.key});
+
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Sağ üstteki 'Debug' bandını kaldırır
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('İlk Projem'),
-          backgroundColor: Colors.blue,
-        ),
-        body: const Center(
-          child: Text(
-            'Merhaba Flutter!',
-            style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
-          ),
-        ),
+      title: 'Flutter Menü Örneği',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
+      home: const AnaIskelet(),
     );
   }
 }
