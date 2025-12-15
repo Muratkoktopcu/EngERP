@@ -1,61 +1,107 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:eng_erp/features/auth/data/auth_service.dart';
+
 class AppShell extends StatelessWidget {
-  final Widget child; //o anda ekranda gösterilen sayfa
+  final Widget child;
 
   const AppShell({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final authService = AuthService();
+    final currentUser = authService.getCurrentUser();
+
     return Scaffold(
       drawer: Drawer(
-        child: ListView(
+        child: Column(
           children: [
-            const DrawerHeader(
-              child: Text("MENÜ", style: TextStyle(fontSize: 24)),
+            /// 🔹 USER INFO
+            UserAccountsDrawerHeader(
+              accountName: Text(
+                currentUser?.email ?? 'Bilinmeyen Kullanıcı',
+              ),
+              accountEmail: Text(
+                currentUser?.role ?? '',
+              ),
+              currentAccountPicture: const CircleAvatar(
+                child: Icon(Icons.person),
+              ),
             ),
 
-            ListTile(
-              leading: const Icon(Icons.inventory_2),
-              title: const Text("Stok Yönetimi"),
-              onTap: () {
-                Navigator.pop(context);         // Drawer kapansın
-                context.go("/stock");
-              },
+            /// 🔹 MENÜ
+            _DrawerItem(
+              icon: Icons.inventory_2,
+              label: 'Stok Yönetimi',
+              route: '/stock',
+            ),
+            _DrawerItem(
+              icon: Icons.calendar_month,
+              label: 'Rezervasyon',
+              route: '/reservation',
+            ),
+            _DrawerItem(
+              icon: Icons.check_circle,
+              label: 'Sales Confirmation',
+              route: '/sales',
+            ),
+            _DrawerItem(
+              icon: Icons.cancel,
+              label: 'Cancel',
+              route: '/cancel',
             ),
 
+            const Spacer(),
+
+            /// 🔹 LOGOUT
             ListTile(
-              leading: const Icon(Icons.calendar_month),
-              title: const Text("Rezervasyon"),
-              onTap: () {
+              leading: const Icon(Icons.logout),
+              title: const Text('Çıkış Yap'),
+              onTap: () async {
                 Navigator.pop(context);
-                context.go("/reservation");
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.check_circle),
-              title: const Text("Sales Confirmation"),
-              onTap: () {
-                Navigator.pop(context);
-                context.go("/sales");
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.cancel),
-              title: const Text("Cancel"),
-              onTap: () {
-                Navigator.pop(context);
-                context.go("/cancel");
+                await authService.logout();
+                context.go('/login');
               },
             ),
           ],
         ),
       ),
-
       body: child,
+    );
+  }
+}
+
+/// Drawer item helper (temizlik + aktif route desteği için hazır)
+class _DrawerItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String route;
+
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.route,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+    final isActive = location == route;
+
+    return ListTile(
+      leading: Icon(icon, color: isActive ? Colors.blue : null),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      selected: isActive,
+      onTap: () {
+        Navigator.pop(context);
+        context.go(route);
+      },
     );
   }
 }

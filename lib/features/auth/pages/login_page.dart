@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import 'package:eng_erp/features/auth/data/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -8,18 +11,18 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Formun durumunu kontrol etmek için key
   final _formKey = GlobalKey<FormState>();
 
-  // Giriş mi Kayıt mı modunda olduğunu tutan değişken
   bool _isLogin = true;
-
-  // Şifre görünürlüğü kontrolü
   bool _obscurePassword = true;
 
-  // Text Controller'lar (Verileri almak için)
+  bool _loading = false;
+  String? _errorText;
+
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -28,34 +31,52 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  // Formu gönderme işlemi
-  void _submitForm() {
-    if (_formKey.currentState!.validate()) {
-      // Validasyon başarılıysa burası çalışır
-      final email = _emailController.text;
-      final password = _passwordController.text;
+  Future<void> _submitForm() async {
+    FocusScope.of(context).unfocus(); // klavyeyi kapat
 
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    setState(() {
+      _loading = true;
+      _errorText = null;
+    });
+
+    final email = _emailController.text;
+    final password = _passwordController.text;
+
+    try {
       if (_isLogin) {
-        print("Giriş yapılıyor: $email");
-        // BURAYA: API Giriş isteği veya Firebase Auth kodu gelecek
+        await _authService.login(email, password);
       } else {
-        print("Kayıt olunuyor: $email");
-        // BURAYA: API Kayıt isteği kodu gelecek
+        await _authService.register(email, password);
       }
+
+      if (!mounted) return;
+
+      // ✅ Login/Register başarılı → app shell tarafına geç
+      context.go('/stock');
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _errorText = e.toString(); // istersen burada daha temiz map edersin
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() => _loading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100], // ERP için kurumsal hafif gri arka plan
+      backgroundColor: Colors.grey[100],
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // --- LOGO VEYA BAŞLIK ALANI ---
               Icon(
                 Icons.business_center,
                 size: 80,
@@ -63,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 20),
               Text(
-                "AFSUAM ERP ", // Projenizin Adı
+                "AFSUAM ERP ",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
@@ -76,9 +97,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 _isLogin ? "Hesabınıza Giriş Yapın" : "Yeni Hesap Oluşturun",
                 style: TextStyle(color: Colors.grey[600], fontSize: 16),
               ),
-              const SizedBox(height: 40),
-
-              // --- FORM ALANI ---
+              const SizedBox(height: 20),
+              if (_errorText != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                  ),
+                  child: Text(
+                    _errorText!,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
               Card(
                 elevation: 4,
                 shape: RoundedRectangleBorder(
@@ -90,7 +125,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        // E-MAIL ALANI
                         TextFormField(
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -112,8 +146,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 20),
-
-                        // ŞİFRE ALANI
                         TextFormField(
                           controller: _passwordController,
                           obscureText: _obscurePassword,
@@ -145,13 +177,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           },
                         ),
                         const SizedBox(height: 30),
-
-                        // GİRİŞ / KAYIT BUTONU
                         SizedBox(
                           width: double.infinity,
                           height: 50,
                           child: ElevatedButton(
-                            onPressed: _submitForm,
+                            onPressed: _loading ? null : _submitForm,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Theme.of(context).primaryColor,
                               foregroundColor: Colors.white,
@@ -159,11 +189,22 @@ class _LoginScreenState extends State<LoginScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                             ),
-                            child: Text(
-                              _isLogin ? "GİRİŞ YAP" : "KAYIT OL",
-                              style: const TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    width: 22,
+                                    height: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : Text(
+                                    _isLogin ? "GİRİŞ YAP" : "KAYIT OL",
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
                       ],
@@ -172,8 +213,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // --- MOD DEĞİŞTİRME (Giriş <-> Kayıt) ---
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -184,14 +223,17 @@ class _LoginScreenState extends State<LoginScreen> {
                     style: TextStyle(color: Colors.grey[700]),
                   ),
                   TextButton(
-                    onPressed: () {
-                      setState(() {
-                        _isLogin = !_isLogin; // Modu tersine çevir
-                        _formKey.currentState?.reset(); // Formu temizle
-                        _emailController.clear();
-                        _passwordController.clear();
-                      });
-                    },
+                    onPressed: _loading
+                        ? null
+                        : () {
+                            setState(() {
+                              _isLogin = !_isLogin;
+                              _errorText = null;
+                              _formKey.currentState?.reset();
+                              _emailController.clear();
+                              _passwordController.clear();
+                            });
+                          },
                     child: Text(
                       _isLogin ? "Üye Ol" : "Giriş Yap",
                       style: const TextStyle(fontWeight: FontWeight.bold),

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
 import 'package:eng_erp/features/auth/data/auth_service.dart';
-import 'package:eng_erp/core/navigation/app_router.dart';  // <-- ROUTER BURADA
-import 'package:go_router/go_router.dart';
+import 'package:eng_erp/core/navigation/app_router.dart'; // <-- ROUTER BURADA
 
 Future<void> testAuth() async {
   final authService = AuthService();
@@ -29,7 +28,7 @@ Future<void> testAuth() async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseClientManager().initialize();
-  await testAuth();
+  //await testAuth();
 
   runApp(const EngErp());
 }
@@ -41,7 +40,7 @@ class EngErp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,               // <-- GO ROUTER ENTEGRASYONU
+      routerConfig: appRouter, // <-- GO ROUTER ENTEGRASYONU
       title: 'ENG ERP',
       theme: ThemeData(
         useMaterial3: true,

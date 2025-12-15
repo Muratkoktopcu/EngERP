@@ -2,7 +2,6 @@
 
 import 'package:eng_erp/features/auth/data/auth_model.dart';
 import 'package:eng_erp/features/auth/data/auth_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
   // Service, Repository'i kullanır.
