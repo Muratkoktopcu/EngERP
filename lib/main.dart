@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
 import 'package:eng_erp/features/auth/data/auth_service.dart';
-import 'package:eng_erp/core/navigation/app_router.dart'; // <-- ROUTER BURADA
+import 'package:eng_erp/core/navigation/app_router.dart';
+import 'package:eng_erp/core/theme/theme.dart'; // 🎨 DESIGN TOKENS
 
 Future<void> testAuth() async {
   final authService = AuthService();
@@ -40,12 +41,9 @@ class EngErp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       debugShowCheckedModeBanner: false,
-      routerConfig: appRouter, // <-- GO ROUTER ENTEGRASYONU
+      routerConfig: appRouter,
       title: 'ENG ERP',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-      ),
+      theme: AppTheme.lightTheme, // 🎨 Merkezi tema sistemi
     );
   }
 }
