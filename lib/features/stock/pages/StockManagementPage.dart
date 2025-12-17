@@ -565,7 +565,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
           children: [
             _actionBtn("Stok Raporu", onPressed: () {}),
             _actionBtn("Ürün Güncelle", onPressed: _handleUpdateProduct, isPrimary: true),
-            _actionBtn("Sil", onPressed: () {}),
+            _actionBtn("Sil", onPressed: _handleDeleteProduct),
             _actionBtn("Rezervasyon Bilgisi", onPressed: () {}),
             _actionBtn("Yenile", onPressed: () {
               setState(() => _selectedStock = null);
@@ -601,6 +601,107 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
         },
       ),
     );
+  }
+
+  /// Seçili ürünü sil
+  Future<void> _handleDeleteProduct() async {
+    if (_selectedStock == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lütfen silmek istediğiniz ürünü seçin'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // Onay dialogu göster
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: Row(
+          children: [
+            Icon(Icons.warning_amber_rounded, color: Colors.red.shade600, size: 28),
+            const SizedBox(width: 8),
+            const Text('Ürün Silme Onayı'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Bu ürünü silmek istediğinizden emin misiniz?'),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade100,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('ID: ${_selectedStock!.id}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  Text('EPC: ${_selectedStock!.epc}'),
+                  Text('Barkod: ${_selectedStock!.barkodNo}'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Bu işlem geri alınamaz!',
+              style: TextStyle(color: Colors.red.shade600, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('İptal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Sil'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    // Silme işlemini gerçekleştir
+    try {
+      await _stockService.deleteStock(_selectedStock!.id);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Ürün başarıyla silindi'),
+            backgroundColor: Colors.green.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        
+        setState(() => _selectedStock = null);
+        _fetchStockData();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Silme hatası: $e'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 
   Widget _actionBtn(String text, {required VoidCallback onPressed, bool isPrimary = false}) {

@@ -167,4 +167,17 @@ class StockService {
       rethrow;
     }
   }
+
+  /// Ürün sil
+  Future<void> deleteStock(int id) async {
+    if (id <= 0) {
+      throw Exception('Geçersiz ID değeri');
+    }
+
+    try {
+      await _repository.deleteStock(id);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

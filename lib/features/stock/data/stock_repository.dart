@@ -152,4 +152,16 @@ class StockRepository {
       throw Exception('Ürün güncellenirken hata oluştu: $e');
     }
   }
+
+  /// Ürün sil
+  Future<void> deleteStock(int id) async {
+    try {
+      await _supabase
+          .from(_tableName)
+          .delete()
+          .eq('ID', id);
+    } catch (e) {
+      throw Exception('Ürün silinirken hata oluştu: $e');
+    }
+  }
 }
