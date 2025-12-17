@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:eng_erp/features/stock/data/stock_service.dart';
+import 'package:eng_erp/features/stock/data/stock_model.dart';
 
 class StokYonetimiPage extends StatefulWidget {
   const StokYonetimiPage({super.key});
@@ -8,6 +10,17 @@ class StokYonetimiPage extends StatefulWidget {
 }
 
 class _StokYonetimiPageState extends State<StokYonetimiPage> {
+  // ============================================================
+  // DATA & STATE MANAGEMENT
+  // ============================================================
+  final StockService _stockService = StockService();
+  List<StockModel> _stockList = [];
+  bool _isLoading = false;
+  String? _errorMessage;
+
+  // ============================================================
+  // FILTER CONTROLLERS
+  // ============================================================
   final TextEditingController epcController = TextEditingController();
   final TextEditingController barkodController = TextEditingController();
   final TextEditingController bandilController = TextEditingController();
@@ -15,16 +28,210 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
   final TextEditingController plakaController = TextEditingController();
 
   String tarihPeriyodu = "Günlük";
-  String urunTipi = "Seçiniz";
-  String urunTuru = "Seçiniz";
-  String yuzeyIslemi = "Seçiniz";
-  String filtreDurum = "Hepsi";
+  String? urunTipi;
+  String? urunTuru;
+  String? yuzeyIslemi;
+  String? filtreDurum;
 
   List<String> periyotList = ["Günlük", "Haftalık", "Aylık", "Yıllık"];
-  List<String> secenek = ["Seçiniz", "Hepsi", "Yarı Mamül", "Bitiş Mamül"];
-  List<String> secenekTuru = ["Seçiniz", "Hepsi", "Granit", "Mermer", "Traverten"];
-  List<String> secenekYuzeyIslemi = ["Seçiniz", "Hepsi", "Polished", "Honed", "Tumbled"];
+  List<String> secenek = ["Hepsi", "Yarı Mamül", "Bitmiş Mamül"];
+  List<String> secenekTuru = ["Hepsi", "Granit", "Mermer", "Traverten"];
+  List<String> secenekYuzeyIslemi = ["Hepsi", "Polished", "Honed", "Tumbled"];
   List<String> durumFiltre = ["Hepsi", "Stokta", "Onay Bekliyor", "Onaylandı", "Sevkiyat Tamamlandı"];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchStockData(); // Sayfa açıldığında verileri yükle
+  }
+
+  @override
+  void dispose() {
+    epcController.dispose();
+    barkodController.dispose();
+    bandilController.dispose();
+    uretimTarihiController.dispose();
+    plakaController.dispose();
+    super.dispose();
+  }
+
+  /// Özelleştirilmiş tarih seçici göster
+  Future<void> _showCustomDatePicker(TextEditingController controller) async {
+    // Eğer controller'da tarih varsa, onu başlangıç tarihi olarak kullan
+    DateTime initialDate = DateTime.now();
+    if (controller.text.isNotEmpty) {
+      try {
+        final parts = controller.text.split('.');
+        if (parts.length == 3) {
+          initialDate = DateTime(
+            int.parse(parts[2]),
+            int.parse(parts[1]),
+            int.parse(parts[0]),
+          );
+        }
+      } catch (_) {}
+    }
+
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      helpText: "ÜRETİM TARİHİ SEÇİN",
+      cancelText: "İPTAL",
+      confirmText: "SEÇ",
+      fieldLabelText: "Tarih girin",
+      fieldHintText: "GG.AA.YYYY",
+      errorFormatText: "Geçersiz tarih formatı",
+      errorInvalidText: "Geçersiz tarih",
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue.shade700,      // Header arka plan
+              onPrimary: Colors.white,            // Header metin
+              onSurface: Colors.grey.shade800,    // Takvim metinleri
+              surface: Colors.white,              // Takvim arka plan
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blue.shade700,
+                textStyle: const TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+            dialogTheme: DialogThemeData(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            datePickerTheme: DatePickerThemeData(
+              backgroundColor: Colors.white,
+              headerBackgroundColor: Colors.blue.shade700,
+              headerForegroundColor: Colors.white,
+              dayStyle: const TextStyle(fontSize: 14),
+              todayBorder: BorderSide(color: Colors.blue.shade700, width: 2),
+              todayForegroundColor: WidgetStateProperty.all(Colors.blue.shade700),
+              dayForegroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.white;
+                }
+                return Colors.grey.shade800;
+              }),
+              dayBackgroundColor: WidgetStateProperty.resolveWith((states) {
+                if (states.contains(WidgetState.selected)) {
+                  return Colors.blue.shade700;
+                }
+                return null;
+              }),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (date != null) {
+      // Tarihi dd.MM.yyyy formatında göster
+      final day = date.day.toString().padLeft(2, '0');
+      final month = date.month.toString().padLeft(2, '0');
+      controller.text = "$day.$month.${date.year}";
+      _fetchStockData();
+    }
+  }
+
+  /// Tüm filtreleri temizle ve varsayılan değerlere döndür
+  void _clearFilters() {
+    setState(() {
+      epcController.clear();
+      barkodController.clear();
+      bandilController.clear();
+      uretimTarihiController.clear();
+      plakaController.clear();
+      tarihPeriyodu = "Günlük";
+      urunTipi = null;
+      urunTuru = null;
+      yuzeyIslemi = null;
+      filtreDurum = null;
+    });
+    _fetchStockData();
+  }
+
+  /// Verileri Supabase'den çek (filtrelerle)
+  Future<void> _fetchStockData() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      // Üretim tarihi aralığını hesapla
+      DateTime? uretimTarihiBaslangic;
+      DateTime? uretimTarihiBitis;
+      
+      if (uretimTarihiController.text.isNotEmpty) {
+        // Tarihi parse et (dd.MM.yyyy formatından)
+        final parts = uretimTarihiController.text.split('.');
+        if (parts.length == 3) {
+          uretimTarihiBaslangic = DateTime(
+            int.parse(parts[2]), // yıl
+            int.parse(parts[1]), // ay
+            int.parse(parts[0]), // gün
+          );
+          
+          // Periyoda göre bitiş tarihini hesapla
+          switch (tarihPeriyodu) {
+            case "Günlük":
+              uretimTarihiBitis = uretimTarihiBaslangic.add(const Duration(days: 1));
+              break;
+            case "Haftalık":
+              uretimTarihiBitis = uretimTarihiBaslangic.add(const Duration(days: 7));
+              break;
+            case "Aylık":
+              uretimTarihiBitis = DateTime(
+                uretimTarihiBaslangic.year,
+                uretimTarihiBaslangic.month + 1,
+                uretimTarihiBaslangic.day,
+              );
+              break;
+            case "Yıllık":
+              uretimTarihiBitis = DateTime(
+                uretimTarihiBaslangic.year + 1,
+                uretimTarihiBaslangic.month,
+                uretimTarihiBaslangic.day,
+              );
+              break;
+          }
+        }
+      }
+
+      final stocks = await _stockService.getFilteredStock(
+        epc: epcController.text.trim().isEmpty ? null : epcController.text,
+        barkod: barkodController.text.trim().isEmpty ? null : barkodController.text,
+        bandilNo: bandilController.text.trim().isEmpty ? null : bandilController.text,
+        plakaNo: plakaController.text.trim().isEmpty ? null : plakaController.text,
+        urunTipi: urunTipi == null || urunTipi == 'Hepsi' ? null : urunTipi,
+        urunTuru: urunTuru == null || urunTuru == 'Hepsi' ? null : urunTuru,
+        yuzeyIslemi: yuzeyIslemi == null || yuzeyIslemi == 'Hepsi' ? null : yuzeyIslemi,
+        durum: filtreDurum == null || filtreDurum == 'Hepsi' ? null : filtreDurum,
+        uretimTarihiBaslangic: uretimTarihiBaslangic,
+        uretimTarihiBitis: uretimTarihiBitis,
+      );
+
+      setState(() {
+        _stockList = stocks;
+        _isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -81,10 +288,29 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
                 _input("Üretim Tarihi", uretimTarihiController, isDate: true),
                 _dropdown("Tarih Periyodu", periyotList, tarihPeriyodu, (v) => setState(() => tarihPeriyodu = v!)),
                 _input("Plaka No", plakaController),
-                _dropdown("Ürün Tipi", secenek, urunTipi, (v) => setState(() => urunTipi = v!)),
-                _dropdown("Ürün Türü", secenekTuru, urunTuru, (v) => setState(() => urunTuru = v!)),
-                _dropdown("Yüzey İşlemi", secenekYuzeyIslemi, yuzeyIslemi, (v) => setState(() => yuzeyIslemi = v!)),
-                _dropdown("Durum ile Filtrele", durumFiltre, filtreDurum, (v) => setState(() => filtreDurum = v!)),
+                _dropdown("Ürün Tipi", secenek, urunTipi, (v) => setState(() => urunTipi = v)),
+                _dropdown("Ürün Türü", secenekTuru, urunTuru, (v) => setState(() => urunTuru = v)),
+                _dropdown("Yüzey İşlemi", secenekYuzeyIslemi, yuzeyIslemi, (v) => setState(() => yuzeyIslemi = v)),
+                _dropdown("Durum ile Filtrele", durumFiltre, filtreDurum, (v) => setState(() => filtreDurum = v)),
+                const SizedBox(width: 16),
+                // Filtreleri Temizle Butonu
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("", style: TextStyle(fontSize: 13)), // Boşluk için
+                    const SizedBox(height: 5),
+                    ElevatedButton.icon(
+                      onPressed: _clearFilters,
+                      icon: const Icon(Icons.clear_all, size: 20),
+                      label: const Text("Filtreleri Temizle"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade400,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -109,22 +335,31 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
                 child: TextField(
                   controller: controller,
                   readOnly: isDate,
-                  onTap: isDate
-                      ? () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      firstDate: DateTime(2000),
-                      lastDate: DateTime(2100),
-                      initialDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      controller.text = "${date.day}.${date.month}.${date.year}";
-                    }
-                  }
-                      : null,
+                  onChanged: (value) => _fetchStockData(), // Filtre değişince veri çek
+                  onTap: isDate ? () => _showCustomDatePicker(controller) : null,
                   decoration: InputDecoration(
+                    hintText: isDate ? "Tarih seçin..." : null,
+                    hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    suffixIcon: isDate
+                        ? Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (controller.text.isNotEmpty)
+                                IconButton(
+                                  icon: Icon(Icons.clear, size: 18, color: Colors.grey.shade600),
+                                  onPressed: () {
+                                    controller.clear();
+                                    _fetchStockData();
+                                  },
+                                  tooltip: "Tarihi Temizle",
+                                ),
+                              Icon(Icons.calendar_month, size: 20, color: Colors.blue.shade700),
+                              const SizedBox(width: 8),
+                            ],
+                          )
+                        : null,
                   ),
                 ),
               ),
@@ -143,7 +378,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
   }
 
   // ---------------------- Dropdown ------------------------
-  Widget _dropdown(String label, List<String> items, String value, Function(String?) onChange) {
+  Widget _dropdown(String label, List<String> items, String? value, Function(String?) onChange) {
     return SizedBox(
       width: 200,
       child: Column(
@@ -151,10 +386,14 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
         children: [
           Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
           const SizedBox(height: 5),
-          DropdownButtonFormField(
+          DropdownButtonFormField<String>(
             value: value,
-            items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: onChange,
+            hint: const Text("Seçiniz", style: TextStyle(color: Colors.grey)),
+            items: items.map((e) => DropdownMenuItem<String>(value: e, child: Text(e))).toList(),
+            onChanged: (newValue) {
+              onChange(newValue); // State'i güncelle
+              _fetchStockData(); // Dropdown değişince veri çek
+            },
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
@@ -167,6 +406,68 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
 
   // ---------------------- TABLE ---------------------------
   Widget _buildDataTable() {
+    // Loading durumunu göster
+    if (_isLoading) {
+      return Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(50.0),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
+    // Hata durumunu göster
+    if (_errorMessage != null) {
+      return Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline, color: Colors.red, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Hata: $_errorMessage',
+                  style: const TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: _fetchStockData,
+                  child: const Text('Tekrar Dene'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Veri yoksa mesaj göster
+    if (_stockList.isEmpty) {
+      return Card(
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        child: const Center(
+          child: Padding(
+            padding: EdgeInsets.all(50.0),
+            child: Text(
+              'Henüz stok verisi bulunmamaktadır.',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Veri varsa tabloyu göster
     return Card(
       elevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
@@ -199,12 +500,40 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
             DataColumn(label: Text("KaydedenPersonel")),
             DataColumn(label: Text("ÜrünCikisTarihi")),
             DataColumn(label: Text("AliciFirma")),
-            DataColumn(label: Text("BaseUrl")),
-            DataColumn(label: Text("RequestClientOptions")),
-            DataColumn(label: Text("TableName")),
-            DataColumn(label: Text("PrimaryKey")),
           ],
-          rows: [],
+          rows: _stockList.map((stock) {
+            return DataRow(cells: [
+              DataCell(Text(stock.id.toString())),
+              DataCell(Text(stock.epc)),
+              DataCell(Text(stock.barkodNo)),
+              DataCell(Text(stock.bandilNo ?? '-')),
+              DataCell(Text(stock.plakaNo ?? '-')),
+              DataCell(Text(stock.urunTipi ?? '-')),
+              DataCell(Text(stock.urunTuru ?? '-')),
+              DataCell(Text(stock.yuzeyIslemi ?? '-')),
+              DataCell(Text(stock.seleksiyon ?? '-')),
+              DataCell(Text(stock.uretimTarihi != null
+                  ? '${stock.uretimTarihi!.day}.${stock.uretimTarihi!.month}.${stock.uretimTarihi!.year}'
+                  : '-')),
+              DataCell(Text(stock.kalinlik?.toString() ?? '-')),
+              DataCell(Text(stock.plakaAdedi?.toString() ?? '-')),
+              DataCell(Text(stock.stokEn?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.stokBoy?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.stokAlan?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.stokTonaj?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.satisEn?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.satisBoy?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.satisAlan?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.satisTonaj?.toStringAsFixed(2) ?? '-')),
+              DataCell(Text(stock.durum ?? '-')),
+              DataCell(Text(stock.rezervasyonNo ?? '-')),
+              DataCell(Text(stock.kaydedenPersonel ?? '-')),
+              DataCell(Text(stock.urunCikisTarihi != null
+                  ? '${stock.urunCikisTarihi!.day}.${stock.urunCikisTarihi!.month}.${stock.urunCikisTarihi!.year}'
+                  : '-')),
+              DataCell(Text(stock.aliciFirma ?? '-')),
+            ]);
+          }).toList(),
         ),
       ),
     );
