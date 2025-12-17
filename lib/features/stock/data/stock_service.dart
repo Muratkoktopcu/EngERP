@@ -88,4 +88,83 @@ class StockService {
       rethrow;
     }
   }
+
+  /// Ürün bilgilerini güncelle
+  Future<StockModel> updateStock({
+    required int id,
+    String? barkodNo,
+    String? bandilNo,
+    String? plakaNo,
+    String? urunTipi,
+    String? urunTuru,
+    String? yuzeyIslemi,
+    String? seleksiyon,
+    DateTime? uretimTarihi,
+    double? kalinlik,
+    double? stokEn,
+    double? stokBoy,
+    double? stokTonaj,
+    int? plakaAdedi,
+    DateTime? urunCikisTarihi,
+  }) async {
+    if (id <= 0) {
+      throw Exception('Geçersiz ID değeri');
+    }
+
+    try {
+      // Sadece güncellenen alanları Map'e ekle
+      final Map<String, dynamic> updateData = {};
+
+      if (barkodNo != null && barkodNo.trim().isNotEmpty) {
+        updateData['BarkodNo'] = barkodNo.trim();
+      }
+      if (bandilNo != null) {
+        updateData['BandilNo'] = bandilNo.trim().isEmpty ? null : bandilNo.trim();
+      }
+      if (plakaNo != null) {
+        updateData['PlakaNo'] = plakaNo.trim().isEmpty ? null : plakaNo.trim();
+      }
+      if (urunTipi != null) {
+        updateData['UrunTipi'] = urunTipi;
+      }
+      if (urunTuru != null) {
+        updateData['UrunTuru'] = urunTuru;
+      }
+      if (yuzeyIslemi != null) {
+        updateData['YuzeyIslemi'] = yuzeyIslemi;
+      }
+      if (seleksiyon != null) {
+        updateData['Seleksiyon'] = seleksiyon.trim().isEmpty ? null : seleksiyon.trim();
+      }
+      if (uretimTarihi != null) {
+        updateData['UretimTarihi'] = uretimTarihi.toIso8601String();
+      }
+      if (kalinlik != null) {
+        updateData['Kalinlik'] = kalinlik;
+      }
+      if (stokEn != null) {
+        updateData['StokEn'] = stokEn;
+      }
+      if (stokBoy != null) {
+        updateData['StokBoy'] = stokBoy;
+      }
+      if (stokTonaj != null) {
+        updateData['StokTonaj'] = stokTonaj;
+      }
+      if (plakaAdedi != null) {
+        updateData['PlakaAdedi'] = plakaAdedi;
+      }
+      if (urunCikisTarihi != null) {
+        updateData['UrunCikisTarihi'] = urunCikisTarihi.toIso8601String();
+      }
+
+      if (updateData.isEmpty) {
+        throw Exception('Güncellenecek alan bulunamadı');
+      }
+
+      return await _repository.updateStock(id, updateData);
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

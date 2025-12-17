@@ -136,4 +136,20 @@ class StockRepository {
       throw Exception('Barkod ile ürün bulunamadı: $e');
     }
   }
+
+  /// Ürün bilgilerini güncelle
+  Future<StockModel> updateStock(int id, Map<String, dynamic> data) async {
+    try {
+      final response = await _supabase
+          .from(_tableName)
+          .update(data)
+          .eq('ID', id)
+          .select()
+          .single();
+
+      return StockModel.fromJson(response as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Ürün güncellenirken hata oluştu: $e');
+    }
+  }
 }

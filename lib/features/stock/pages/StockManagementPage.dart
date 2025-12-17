@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:eng_erp/features/stock/data/stock_service.dart';
 import 'package:eng_erp/features/stock/data/stock_model.dart';
+import 'package:eng_erp/features/stock/widgets/product_update_dialog.dart';
 
 class StokYonetimiPage extends StatefulWidget {
   const StokYonetimiPage({super.key});
@@ -17,6 +18,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
   List<StockModel> _stockList = [];
   bool _isLoading = false;
   String? _errorMessage;
+  StockModel? _selectedStock; // Seçilen ürün
 
   // ============================================================
   // FILTER CONTROLLERS
@@ -474,6 +476,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
+          showCheckboxColumn: false,
           columns: const [
             DataColumn(label: Text("ID")),
             DataColumn(label: Text("EPC")),
@@ -502,7 +505,19 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
             DataColumn(label: Text("AliciFirma")),
           ],
           rows: _stockList.map((stock) {
-            return DataRow(cells: [
+            final isSelected = _selectedStock?.id == stock.id;
+            return DataRow(
+              selected: isSelected,
+              color: WidgetStateProperty.resolveWith<Color?>((states) {
+                if (isSelected) return Colors.blue.shade100;
+                return null;
+              }),
+              onSelectChanged: (selected) {
+                setState(() {
+                  _selectedStock = selected == true ? stock : null;
+                });
+              },
+              cells: [
               DataCell(Text(stock.id.toString())),
               DataCell(Text(stock.epc)),
               DataCell(Text(stock.barkodNo)),
@@ -548,27 +563,57 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
           children: [
-            _actionBtn("Stok Raporu"),
-            _actionBtn("Ürün Güncelle"),
-            _actionBtn("Sil"),
-            _actionBtn("Rezervasyon Bilgisi"),
-            _actionBtn("Yenile"),
+            _actionBtn("Stok Raporu", onPressed: () {}),
+            _actionBtn("Ürün Güncelle", onPressed: _handleUpdateProduct, isPrimary: true),
+            _actionBtn("Sil", onPressed: () {}),
+            _actionBtn("Rezervasyon Bilgisi", onPressed: () {}),
+            _actionBtn("Yenile", onPressed: () {
+              setState(() => _selectedStock = null);
+              _fetchStockData();
+            }),
           ],
         ),
       ),
     );
   }
 
-  Widget _actionBtn(String text) {
+  /// Ürün güncelleme dialog'ını aç
+  void _handleUpdateProduct() {
+    if (_selectedStock == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lütfen güncellemek istediğiniz ürünü seçin'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => ProductUpdateDialog(
+        stock: _selectedStock!,
+        onUpdateSuccess: () {
+          setState(() => _selectedStock = null);
+          _fetchStockData();
+        },
+      ),
+    );
+  }
+
+  Widget _actionBtn(String text, {required VoidCallback onPressed, bool isPrimary = false}) {
     return Padding(
       padding: const EdgeInsets.only(right: 8),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey.shade200,
+          backgroundColor: isPrimary ? Colors.blue.shade700 : Colors.grey.shade200,
+          foregroundColor: isPrimary ? Colors.white : Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
         ),
-        child: Text(text, style: const TextStyle(color: Colors.black)),
+        child: Text(text),
       ),
     );
   }
