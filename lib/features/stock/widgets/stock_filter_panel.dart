@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eng_erp/features/stock/pages/barcode_scanner_page.dart';
 
 /// Filtre paneli için kullanılan data class
 class StockFilterData {
@@ -59,6 +60,7 @@ class StockFilterPanel extends StatefulWidget {
   final VoidCallback onFilterChanged;
   final VoidCallback onClearFilters;
   final Function(StockFilterData) onDataChanged;
+  final VoidCallback? onBarcodeScanned;
 
   const StockFilterPanel({
     super.key,
@@ -66,6 +68,7 @@ class StockFilterPanel extends StatefulWidget {
     required this.onFilterChanged,
     required this.onClearFilters,
     required this.onDataChanged,
+    this.onBarcodeScanned,
   });
 
   @override
@@ -146,6 +149,22 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
       filtreDurum = null;
     });
     widget.onClearFilters();
+  }
+
+  /// Barkod tarayıcı sayfasını aç
+  Future<void> _openBarcodeScanner() async {
+    final String? scannedBarcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (context) => const BarcodeScannerPage(),
+      ),
+    );
+
+    if (scannedBarcode != null && scannedBarcode.isNotEmpty) {
+      setState(() {
+        barkodController.text = scannedBarcode;
+      });
+      _notifyChange();
+    }
   }
 
   Future<void> _showCustomDatePicker(TextEditingController controller) async {
@@ -248,7 +267,7 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInput("EPC", epcController),
-                _buildInput("Barkod", barkodController, hasButton: true, buttonText: "Barkodu Oku"),
+                _buildInput("Barkod", barkodController, hasButton: true, buttonText: "Barkodu Oku", onButtonPressed: _openBarcodeScanner),
                 _buildInput("Bandıl No", bandilController),
                 _buildInput("Üretim Tarihi", uretimTarihiController, isDate: true),
                 _buildDropdown("Tarih Periyodu", periyotList, tarihPeriyodu, (v) {
@@ -299,7 +318,7 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
   }
 
   Widget _buildInput(String label, TextEditingController controller,
-      {bool isDate = false, bool hasButton = false, String? buttonText}) {
+      {bool isDate = false, bool hasButton = false, String? buttonText, VoidCallback? onButtonPressed}) {
     return SizedBox(
       width: 250,
       child: Column(
@@ -343,10 +362,14 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
               ),
               if (hasButton) const SizedBox(width: 6),
               if (hasButton)
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.grey.shade300, foregroundColor: Colors.black),
-                  child: Text(buttonText ?? "..."),
+                ElevatedButton.icon(
+                  onPressed: onButtonPressed,
+                  icon: const Icon(Icons.qr_code_scanner, size: 18),
+                  label: Text(buttonText ?? "..."),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue.shade600,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
             ],
           ),
