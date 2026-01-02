@@ -6,6 +6,7 @@ import 'package:eng_erp/features/stock/widgets/delete_confirmation_dialog.dart';
 import 'package:eng_erp/features/stock/widgets/stock_filter_panel.dart';
 import 'package:eng_erp/features/stock/widgets/stock_data_table.dart';
 import 'package:eng_erp/features/stock/widgets/stock_action_buttons.dart';
+import 'package:eng_erp/features/stock/pages/stock_report_preview_page.dart';
 
 class StokYonetimiPage extends StatefulWidget {
   const StokYonetimiPage({super.key});
@@ -153,7 +154,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
 
                   // Aksiyon Butonları
                   StockActionButtons(
-                    onStokRaporu: () {},
+                    onStokRaporu: _handleStokRaporu,
                     onUrunGuncelle: _handleUpdateProduct,
                     onSil: _handleDeleteProduct,
                     onRezervasyonBilgisi: () {},
@@ -243,5 +244,28 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
         );
       }
     }
+  }
+
+  /// Stok raporu sayfasına git
+  void _handleStokRaporu() {
+    if (_stockList.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Raporlanacak stok bulunamadı'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => StockReportPreviewPage(
+          stocks: _stockList,
+          filters: _filterData,
+        ),
+      ),
+    );
   }
 }
