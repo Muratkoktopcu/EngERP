@@ -21,6 +21,18 @@ class ReservationService {
     }
   }
 
+  /// Rezervasyon numarasına göre rezervasyon getir
+  Future<ReservationModel?> getReservationByNo(String rezervasyonNo) async {
+    if (rezervasyonNo.trim().isEmpty) {
+      return null;
+    }
+    try {
+      return await _repository.getReservationByNo(rezervasyonNo.trim());
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   /// Ürünün rezervasyona eklenip eklenemeyeceğini kontrol et
   /// Returns: null if valid, error message if invalid
   String? validateProductForReservation(StockModel stock, List<StockModel> cart) {

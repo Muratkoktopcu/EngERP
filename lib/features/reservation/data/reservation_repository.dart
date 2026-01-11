@@ -110,6 +110,22 @@ class ReservationRepository {
     }
   }
 
+  /// Rezervasyon numarasına göre rezervasyon getir
+  Future<ReservationModel?> getReservationByNo(String rezervasyonNo) async {
+    try {
+      final response = await _supabase
+          .from(_reservationTable)
+          .select()
+          .eq('RezervasyonNo', rezervasyonNo)
+          .maybeSingle();
+
+      if (response == null) return null;
+      return ReservationModel.fromJson(response as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception('Rezervasyon bilgisi alınırken hata: $e');
+    }
+  }
+
   /// Tüm rezervasyonları getir
   Future<List<ReservationModel>> getAllReservations() async {
     try {

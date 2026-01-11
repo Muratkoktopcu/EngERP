@@ -7,6 +7,8 @@ import 'package:eng_erp/features/stock/widgets/stock_filter_panel.dart';
 import 'package:eng_erp/features/stock/widgets/stock_data_table.dart';
 import 'package:eng_erp/features/stock/widgets/stock_action_buttons.dart';
 import 'package:eng_erp/features/stock/pages/stock_report_preview_page.dart';
+import 'package:eng_erp/features/stock/widgets/reservation_info_dialog.dart';
+import 'package:eng_erp/features/reservation/data/reservation_service.dart';
 
 class StokYonetimiPage extends StatefulWidget {
   const StokYonetimiPage({super.key});
@@ -157,7 +159,7 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
                     onStokRaporu: _handleStokRaporu,
                     onUrunGuncelle: _handleUpdateProduct,
                     onSil: _handleDeleteProduct,
-                    onRezervasyonBilgisi: () {},
+                    onRezervasyonBilgisi: _handleRezervasyonBilgisi,
                     onYenile: () {
                       setState(() => _selectedStock = null);
                       _fetchStockData();
@@ -267,5 +269,89 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
         ),
       ),
     );
+  }
+
+  /// Seçili ürünün rezervasyon bilgisini göster
+  Future<void> _handleRezervasyonBilgisi() async {
+    // 1. Ürün seçilmedi kontrolü
+    if (_selectedStock == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Lütfen bir ürün seçin.'),
+          backgroundColor: Colors.orange.shade600,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    try {
+      // 2. EPC ile veritabanından ürün sorgula
+      final stock = await _stockService.getStockByEPC(_selectedStock!.epc);
+
+      if (stock == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Bu ürün herhangi bir rezervasyona ait değil.'),
+              backgroundColor: Colors.orange.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 3. Rezervasyon numarası kontrolü
+      final rezervasyonNo = stock.rezervasyonNo;
+      if (rezervasyonNo == null || rezervasyonNo.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Bu ürün herhangi bir rezervasyona ait değil.'),
+              backgroundColor: Colors.orange.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 4. Rezervasyon bilgisini getir
+      final reservationService = ReservationService();
+      final reservation = await reservationService.getReservationByNo(rezervasyonNo);
+
+      if (reservation == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('Bu ürün herhangi bir rezervasyona ait değil.'),
+              backgroundColor: Colors.orange.shade600,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      // 5. Rezervasyon bilgisi penceresini aç
+      if (mounted) {
+        showReservationInfoDialog(
+          context: context,
+          reservation: reservation,
+        );
+      }
+    } catch (e) {
+      // 5. Hata durumunda kullanıcıya mesaj göster
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Hata: $e'),
+            backgroundColor: Colors.red.shade600,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
   }
 }
