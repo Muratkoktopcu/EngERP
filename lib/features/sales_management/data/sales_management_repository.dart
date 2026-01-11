@@ -151,7 +151,6 @@ class SalesManagementRepository {
         rezervasyonNo: reservation.rezervasyonNo,
         rezervasyonKodu: reservation.rezervasyonKodu,
         aliciFirma: reservation.aliciFirma,
-        rezervasyonSorumlusu: reservation.rezervasyonSorumlusu,
         satisSorumlusu: reservation.satisSorumlusu,
         islemTarihi: reservation.islemTarihi,
         durum: reservation.durum,
@@ -187,7 +186,6 @@ class SalesManagementRepository {
           satisAlan: product.satisAlan,
           satisTonaj: product.satisTonaj,
           durum: product.durum,
-          iptalTarihi: DateTime.now(),
         );
 
         await _supabase.from(_cancelDetailTable).insert(detayModel.toInsertJson());

@@ -6,7 +6,6 @@ class RezIptalModel {
   final String rezervasyonNo;
   final String? rezervasyonKodu;
   final String? aliciFirma;
-  final String? rezervasyonSorumlusu;
   final String? satisSorumlusu;
   final DateTime? islemTarihi;
   final String? durum;
@@ -22,14 +21,13 @@ class RezIptalModel {
     required this.rezervasyonNo,
     this.rezervasyonKodu,
     this.aliciFirma,
-    this.rezervasyonSorumlusu,
     this.satisSorumlusu,
     this.islemTarihi,
     this.durum,
     this.urunCikisTarihi,
     this.sevkiyatAdresi,
     this.kaydedenPersonel,
-    this.iptalSebebi,
+    this.iptalSebebi, 
     this.iptalTarihi,
     this.iptalEdenPersonel,
   });
@@ -40,7 +38,6 @@ class RezIptalModel {
       rezervasyonNo: json['RezervasyonNo'] as String,
       rezervasyonKodu: json['RezervasyonKodu'] as String?,
       aliciFirma: json['AliciFirma'] as String?,
-      rezervasyonSorumlusu: json['RezervasyonSorumlusu'] as String?,
       satisSorumlusu: json['SatisSorumlusu'] as String?,
       islemTarihi: json['IslemTarihi'] != null
           ? DateTime.parse(json['IslemTarihi'] as String)
@@ -62,7 +59,6 @@ class RezIptalModel {
       'RezervasyonNo': rezervasyonNo,
       'RezervasyonKodu': rezervasyonKodu,
       'AliciFirma': aliciFirma,
-      'RezervasyonSorumlusu': rezervasyonSorumlusu,
       'SatisSorumlusu': satisSorumlusu,
       'IslemTarihi': islemTarihi?.toIso8601String(),
       'Durum': durum,
@@ -98,7 +94,6 @@ class RezIptalDetayModel {
   final double? satisAlan;
   final double? satisTonaj;
   final String? durum;
-  final DateTime? iptalTarihi;
 
   RezIptalDetayModel({
     this.id,
@@ -121,7 +116,6 @@ class RezIptalDetayModel {
     this.satisAlan,
     this.satisTonaj,
     this.durum,
-    this.iptalTarihi,
   });
 
   factory RezIptalDetayModel.fromJson(Map<String, dynamic> json) {
@@ -161,9 +155,6 @@ class RezIptalDetayModel {
           ? (json['SatisTonaj'] as num).toDouble()
           : null,
       durum: json['Durum'] as String?,
-      iptalTarihi: json['IptalTarihi'] != null
-          ? DateTime.parse(json['IptalTarihi'] as String)
-          : null,
     );
   }
 
@@ -188,7 +179,6 @@ class RezIptalDetayModel {
       'SatisAlan': satisAlan,
       'SatisTonaj': satisTonaj,
       'Durum': durum,
-      'IptalTarihi': iptalTarihi?.toIso8601String(),
     };
   }
 }
