@@ -1,5 +1,20 @@
-import 'package:flutter/material.dart';
+// lib/features/sales_confirmation/pages/SalesConfirmationPage.dart
 
+import 'package:flutter/material.dart';
+import 'package:eng_erp/core/theme/theme.dart';
+import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/features/reservation/data/reservation_model.dart';
+import 'package:eng_erp/features/stock/data/stock_model.dart';
+import 'package:eng_erp/features/sales_management/data/sales_management_service.dart';
+import 'package:eng_erp/features/sales_management/widgets/sales_filter_panel.dart';
+import 'package:eng_erp/features/sales_management/widgets/sales_reservation_table.dart';
+import 'package:eng_erp/features/sales_management/widgets/sales_detail_table.dart';
+import 'package:eng_erp/features/sales_management/widgets/sales_action_buttons.dart';
+import 'package:eng_erp/features/sales_management/widgets/product_selection_dialog.dart';
+import 'package:eng_erp/features/sales_management/widgets/cancel_reservation_dialog.dart';
+import 'package:eng_erp/features/sales_management/widgets/dimension_update_dialog.dart';
+
+/// 📊 Satış Yönetimi Sayfası
 class SalesConfirmationPage extends StatefulWidget {
   const SalesConfirmationPage({super.key});
 
@@ -8,298 +23,649 @@ class SalesConfirmationPage extends StatefulWidget {
 }
 
 class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
-  final TextEditingController epcController = TextEditingController();
-  final TextEditingController barkodController = TextEditingController();
-  final TextEditingController bandilController = TextEditingController();
-  final TextEditingController uretimTarihiController = TextEditingController();
-  final TextEditingController plakaController = TextEditingController();
+  // Service
+  final SalesManagementService _service = SalesManagementService();
 
-  String tarihPeriyodu = "Günlük";
-  String urunTipi = "Seçiniz";
-  String urunTuru = "Seçiniz";
-  String yuzeyIslemi = "Seçiniz";
-  String filtreDurum = "Hepsi";
+  // Kullanıcı bilgisi
+  String _currentUser = '';
 
-  List<String> periyotList = ["Günlük", "Haftalık", "Aylık", "Yıllık"];
-  List<String> secenek = ["Seçiniz", "Hepsi", "Yarı Mamül", "Bitiş Mamül"];
-  List<String> secenekTuru = ["Seçiniz", "Hepsi", "Granit", "Mermer", "Traverten"];
-  List<String> secenekYuzeyIslemi = ["Seçiniz", "Hepsi", "Polished", "Honed", "Tumbled"];
-  List<String> durumFiltre = ["Hepsi", "Stokta", "Onay Bekliyor", "Onaylandı", "Sevkiyat Tamamlandı"];
+  // Listeler
+  List<ReservationModel> _reservations = [];
+  List<StockModel> _products = [];
+  List<StockModel> _availableProducts = [];
+  List<String> _firmaOnerileri = [];
+
+  // Seçimler
+  ReservationModel? _selectedReservation;
+  StockModel? _selectedProduct;
+
+  // Filtre Controller'ları
+  final TextEditingController _rezervasyonNoController = TextEditingController();
+  final TextEditingController _rezervasyonKoduController = TextEditingController();
+  final TextEditingController _aliciFirmaController = TextEditingController();
+  final TextEditingController _rezervasyonSorumlusuController = TextEditingController();
+  final TextEditingController _satisSorumlusuController = TextEditingController();
+  final TextEditingController _epcController = TextEditingController();
+
+  // Filtre Durumları
+  DateTime? _selectedDate;
+  String _tarihPeriyodu = 'Günlük';
+  String _durum = 'Hepsi';
+
+  // UI Durumları
+  bool _isLoading = false;
+  bool _isDetailLoading = false;
+  bool _isFilterExpanded = true;
+  bool _isActionLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initPage();
+  }
+
+  @override
+  void dispose() {
+    _rezervasyonNoController.dispose();
+    _rezervasyonKoduController.dispose();
+    _aliciFirmaController.dispose();
+    _rezervasyonSorumlusuController.dispose();
+    _satisSorumlusuController.dispose();
+    _epcController.dispose();
+    super.dispose();
+  }
+
+  /// Sayfa başlangıç yüklemesi
+  Future<void> _initPage() async {
+    // Tarih başlangıçta seçili değil
+    await _loadCurrentUser();
+    await _fetchReservations();
+  }
+
+  /// Aktif kullanıcıyı yükle
+  Future<void> _loadCurrentUser() async {
+    try {
+      final user = SupabaseClientManager().db.auth.currentUser;
+      if (user != null) {
+        setState(() {
+          _currentUser = user.userMetadata?['displayName'] as String? ??
+              user.email ??
+              'Bilinmeyen';
+        });
+      }
+    } catch (e) {
+      debugPrint('Kullanıcı bilgisi alınamadı: $e');
+    }
+  }
+
+  /// Rezervasyonları getir
+  Future<void> _fetchReservations() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final reservations = await _service.getFilteredReservations(
+        rezervasyonNo: _rezervasyonNoController.text.trim(),
+        rezervasyonKodu: _rezervasyonKoduController.text.trim(),
+        aliciFirma: _aliciFirmaController.text.trim(),
+        rezervasyonSorumlusu: _rezervasyonSorumlusuController.text.trim(),
+        satisSorumlusu: _satisSorumlusuController.text.trim(),
+        durum: _durum,
+        tarih: _selectedDate,
+        tarihPeriyodu: _tarihPeriyodu,
+        epc: _epcController.text.trim(),
+      );
+
+      setState(() {
+        _reservations = reservations;
+        _selectedReservation = null;
+        _selectedProduct = null;
+        _products = [];
+      });
+    } catch (e) {
+      _showError('Rezervasyonlar yüklenirken hata: $e');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Seçili rezervasyonun ürünlerini getir
+  Future<void> _fetchReservationProducts(String rezervasyonNo) async {
+    setState(() => _isDetailLoading = true);
+
+    try {
+      final products = await _service.getReservationProducts(rezervasyonNo);
+      setState(() {
+        _products = products;
+        _selectedProduct = null;
+      });
+    } catch (e) {
+      _showError('Ürünler yüklenirken hata: $e');
+    } finally {
+      setState(() => _isDetailLoading = false);
+    }
+  }
+
+  /// Firma ara (autocomplete için)
+  Future<void> _searchCompanies(String term) async {
+    if (term.isEmpty) {
+      setState(() => _firmaOnerileri = []);
+      return;
+    }
+
+    try {
+      final companies = await _service.searchCompanies(term);
+      setState(() {
+        _firmaOnerileri = companies.map((c) => c.firmaAdi).toList();
+      });
+    } catch (e) {
+      debugPrint('Firma araması hatası: $e');
+    }
+  }
+
+  /// Stokta olan ürünleri getir
+  Future<void> _fetchAvailableProducts(String searchTerm) async {
+    try {
+      final products = await _service.getAvailableProducts(searchTerm: searchTerm);
+      setState(() => _availableProducts = products);
+    } catch (e) {
+      debugPrint('Stok ürünleri yüklenirken hata: $e');
+    }
+  }
+
+  /// Filtreleri temizle
+  void _clearFilters() {
+    setState(() {
+      _rezervasyonNoController.clear();
+      _rezervasyonKoduController.clear();
+      _aliciFirmaController.clear();
+      _rezervasyonSorumlusuController.clear();
+      _satisSorumlusuController.clear();
+      _epcController.clear();
+      _selectedDate = DateTime.now();
+      _tarihPeriyodu = 'Günlük';
+      _durum = 'Hepsi';
+    });
+    _fetchReservations();
+  }
+
+  /// Tarih seçici
+  Future<void> _selectDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _selectedDate ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(2030),
+    );
+
+    if (picked != null) {
+      setState(() => _selectedDate = picked);
+      _fetchReservations();
+    }
+  }
+
+  // ==================== AKSIYON HANDLER'LARI ====================
+
+  /// Rezervasyonu onayla
+  Future<void> _handleApprove() async {
+    if (_selectedReservation == null) {
+      _showWarning('Lütfen bir rezervasyon seçin.');
+      return;
+    }
+
+    final validationError = _service.validateApproval(_selectedReservation!);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    setState(() => _isActionLoading = true);
+
+    try {
+      await _service.approveReservation(_selectedReservation!, _currentUser);
+      _showSuccess('Rezervasyon onaylandı.');
+      await _fetchReservations();
+    } catch (e) {
+      _showError('Onaylama hatası: $e');
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
+  }
+
+  /// Onayı geri al
+  Future<void> _handleRevokeApproval() async {
+    if (_selectedReservation == null) {
+      _showWarning('Lütfen bir rezervasyon seçin.');
+      return;
+    }
+
+    final validationError = _service.validateRevokeApproval(_selectedReservation!);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    setState(() => _isActionLoading = true);
+
+    try {
+      await _service.revokeApproval(_selectedReservation!);
+      _showSuccess('Rezervasyon onayı geri alındı.');
+      await _fetchReservations();
+    } catch (e) {
+      _showError('Onay geri alma hatası: $e');
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
+  }
+
+  /// Ürün ekle
+  Future<void> _handleAddProduct() async {
+    if (_selectedReservation == null) {
+      _showWarning('Lütfen bir rezervasyon seçin.');
+      return;
+    }
+
+    final validationError = _service.validateAddProduct(_selectedReservation);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    // Stok ürünlerini yükle
+    await _fetchAvailableProducts('');
+
+    if (!mounted) return;
+
+    final selectedProduct = await showDialog<StockModel>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return ProductSelectionDialog(
+            availableProducts: _availableProducts,
+            onSearch: (term) async {
+              await _fetchAvailableProducts(term);
+              setDialogState(() {});
+            },
+          );
+        },
+      ),
+    );
+
+    if (selectedProduct != null) {
+      setState(() => _isActionLoading = true);
+
+      try {
+        await _service.addProductToReservation(
+          epc: selectedProduct.epc,
+          reservation: _selectedReservation!,
+        );
+        _showSuccess('Ürün rezervasyona eklendi.');
+        await _fetchReservationProducts(_selectedReservation!.rezervasyonNo);
+      } catch (e) {
+        _showError('Ürün ekleme hatası: $e');
+      } finally {
+        setState(() => _isActionLoading = false);
+      }
+    }
+  }
+
+  /// Ürün çıkar
+  Future<void> _handleRemoveProduct() async {
+    if (_selectedProduct == null) {
+      _showWarning('Lütfen bir ürün seçin.');
+      return;
+    }
+
+    final validationError = _service.validateRemoveProduct(_selectedProduct);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    // Son ürün mü kontrol et
+    if (_products.length <= 1) {
+      final confirm = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Son Ürün'),
+          content: const Text(
+            'Bu ürün rezervasyondaki son ürün. Çıkarılırsa rezervasyon da silinecek. Devam etmek istiyor musunuz?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('İptal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
+              child: const Text('Devam Et'),
+            ),
+          ],
+        ),
+      );
+
+      if (confirm != true) return;
+    }
+
+    setState(() => _isActionLoading = true);
+
+    try {
+      final reservationDeleted = await _service.removeProductFromReservation(
+        product: _selectedProduct!,
+        rezervasyonNo: _selectedReservation!.rezervasyonNo,
+      );
+
+      if (reservationDeleted) {
+        _showSuccess('Ürün çıkarıldı ve rezervasyon silindi.');
+        await _fetchReservations();
+      } else {
+        _showSuccess('Ürün rezervasyondan çıkarıldı.');
+        await _fetchReservationProducts(_selectedReservation!.rezervasyonNo);
+      }
+    } catch (e) {
+      _showError('Ürün çıkarma hatası: $e');
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
+  }
+
+  /// Boyut güncelle
+  Future<void> _handleUpdateDimensions() async {
+    if (_selectedProduct == null) {
+      _showWarning('Lütfen bir ürün seçin.');
+      return;
+    }
+
+    final result = await DimensionUpdateDialog.show(
+      context,
+      product: _selectedProduct!,
+    );
+
+    if (result != null) {
+      setState(() => _isActionLoading = true);
+
+      try {
+        await _service.updateProductDimensions(
+          epc: _selectedProduct!.epc,
+          satisEn: result['satisEn']!,
+          satisBoy: result['satisBoy']!,
+          satisAlan: result['satisAlan'],
+          satisTonaj: result['satisTonaj'],
+        );
+        _showSuccess('Boyutlar güncellendi.');
+        await _fetchReservationProducts(_selectedReservation!.rezervasyonNo);
+      } catch (e) {
+        _showError('Boyut güncelleme hatası: $e');
+      } finally {
+        setState(() => _isActionLoading = false);
+      }
+    }
+  }
+
+  /// Rezervasyonu iptal et
+  Future<void> _handleCancel() async {
+    if (_selectedReservation == null) {
+      _showWarning('Lütfen bir rezervasyon seçin.');
+      return;
+    }
+
+    final validationError = await _service.validateCancellation(_selectedReservation!);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    final reason = await CancelReservationDialog.show(
+      context,
+      rezervasyonNo: _selectedReservation!.rezervasyonNo,
+      aliciFirma: _selectedReservation!.aliciFirma,
+    );
+
+    if (reason != null && reason.isNotEmpty) {
+      setState(() => _isActionLoading = true);
+
+      try {
+        await _service.cancelReservation(
+          reservation: _selectedReservation!,
+          iptalSebebi: reason,
+          iptalEdenPersonel: _currentUser,
+        );
+        _showSuccess('Rezervasyon iptal edildi ve arşivlendi.');
+        await _fetchReservations();
+      } catch (e) {
+        _showError('İptal hatası: $e');
+      } finally {
+        setState(() => _isActionLoading = false);
+      }
+    }
+  }
+
+  /// Packing List
+  Future<void> _handlePackingList() async {
+    if (_selectedReservation == null) {
+      _showWarning('Lütfen bir rezervasyon seçin.');
+      return;
+    }
+
+    final validationError = _service.validatePackingList(_selectedReservation);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    // TODO: Packing List görüntüleme sayfasına yönlendir
+    _showInfo('Packing List özelliği yakında eklenecek.');
+  }
+
+  /// PDF Rapor
+  Future<void> _handlePdfReport() async {
+    final validationError = _service.validatePdfReport(_reservations);
+    if (validationError != null) {
+      _showWarning(validationError);
+      return;
+    }
+
+    // TODO: PDF rapor oluşturma sayfasına yönlendir
+    _showInfo('PDF Rapor özelliği yakında eklenecek.');
+  }
+
+  // ==================== UI BUILD ====================
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Colors.grey.shade200,
+      color: AppColors.backgroundLight,
       child: Column(
         children: [
-          // ----------- APPBAR TUTULDU -----------
-          PreferredSize(
-            preferredSize: const Size.fromHeight(56),
-            child: AppBar(
-              title: const Text("Satış Yönetimi"),
-              backgroundColor: Colors.white60,
-              centerTitle: false,
-              elevation: 2,
-            ),
-          ),
-
-          // ----------- GÖVDE -----------
+          // AppBar
+          _buildAppBar(),
+          // İçerik
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(12.0),
+              padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
                 children: [
-                  buildReservationFilterCard(),
-                  const SizedBox(height: 12),
-
-                  Expanded(flex: 1, child: _buildDataTable()),
-                  const SizedBox(height: 12),
-                  Expanded(flex: 1, child: _buildDataTable2()),
-
-                  const SizedBox(height: 10),
-                  _buildBottomButtons(),
+                  // Filtre Paneli
+                  SalesFilterPanel(
+                    isExpanded: _isFilterExpanded,
+                    rezervasyonNoController: _rezervasyonNoController,
+                    rezervasyonKoduController: _rezervasyonKoduController,
+                    aliciFirmaController: _aliciFirmaController,
+                    rezervasyonSorumlusuController: _rezervasyonSorumlusuController,
+                    satisSorumlusuController: _satisSorumlusuController,
+                    epcController: _epcController,
+                    selectedDate: _selectedDate,
+                    tarihPeriyodu: _tarihPeriyodu,
+                    durum: _durum,
+                    firmaOnerileri: _firmaOnerileri,
+                    onDateTap: _selectDate,
+                    onPeriyotChanged: (value) {
+                      setState(() => _tarihPeriyodu = value!);
+                      _fetchReservations();
+                    },
+                    onDurumChanged: (value) {
+                      setState(() => _durum = value!);
+                      _fetchReservations();
+                    },
+                    onClear: _clearFilters,
+                    onFilter: _fetchReservations,
+                    onFirmaSearch: _searchCompanies,
+                  ),
+                  // Tablolar - Alt Alta
+                  Expanded(
+                    child: Column(
+                      children: [
+                        // Rezervasyon Listesi
+                        Expanded(
+                          flex: 1,
+                          child: SalesReservationTable(
+                            reservations: _reservations,
+                            selectedRezervasyonNo: _selectedReservation?.rezervasyonNo,
+                            onRowTap: (reservation) {
+                              setState(() {
+                                _selectedReservation = reservation;
+                                _selectedProduct = null;
+                              });
+                              _fetchReservationProducts(reservation.rezervasyonNo);
+                            },
+                            isLoading: _isLoading,
+                            onRefresh: _fetchReservations,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        // Ürün Detayları
+                        Expanded(
+                          flex: 1,
+                          child: SalesDetailTable(
+                            products: _products,
+                            selectedEpc: _selectedProduct?.epc,
+                            onRowTap: (product) {
+                              setState(() => _selectedProduct = product);
+                            },
+                            isLoading: _isDetailLoading,
+                            rezervasyonNo: _selectedReservation?.rezervasyonNo,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // ------------------- FİLTRE KARTI -------------------
-  Widget buildReservationFilterCard() {
-    final inputBorder = OutlineInputBorder(borderRadius: BorderRadius.circular(6));
-    const contentPadding = EdgeInsets.symmetric(horizontal: 8, vertical: 10);
-
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        child: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // ---- Rezervasyon Tarihi ----
-                SizedBox(
-                  width: 140,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Rezervasyon tarihi", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 5),
-                      TextField(
-                        readOnly: true,
-                        decoration: InputDecoration(
-                          hintText: "Tarih",
-                          suffixIcon: const Icon(Icons.calendar_month, size: 20),
-                          border: inputBorder,
-                          contentPadding: contentPadding,
-                        ),
-                        onTap: () async {
-                          await showDatePicker(
-                            context: context,
-                            firstDate: DateTime(2000),
-                            lastDate: DateTime(2100),
-                            initialDate: DateTime.now(),
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-
-                // ---- Rezervasyon Kodu ----
-                _simpleField("Rez. Kodu", 130, inputBorder, contentPadding),
-                const SizedBox(width: 10),
-
-                // ---- Rezervasyon No ----
-                _simpleField("Rez. No", 130, inputBorder, contentPadding),
-                const SizedBox(width: 10),
-
-                // ---- Alıcı Firma ----
-                SizedBox(
-                  width: 160,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text("Alıcı Firma", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                      const SizedBox(height: 5),
-                      DropdownButtonFormField(
-                        items: const [
-                          DropdownMenuItem(value: "A", child: Text("Firma A")),
-                          DropdownMenuItem(value: "B", child: Text("Firma B")),
-                          DropdownMenuItem(value: "C", child: Text("Firma C")),
-                        ],
-                        onChanged: (value) {},
-                        decoration: InputDecoration(border: inputBorder, contentPadding: contentPadding),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                _simpleField("Rez. Sorumlusu", 150, inputBorder, contentPadding),
-                const SizedBox(width: 10),
-
-                _simpleField("Satış Sorumlusu", 150, inputBorder, contentPadding),
-                const SizedBox(width: 10),
-
-                _dropdown("Tarih Periyodu", periyotList, tarihPeriyodu, (v) => setState(() => tarihPeriyodu = v!)),
-                _dropdown("Durum ile Filtrele", durumFiltre, filtreDurum, (v) => setState(() => filtreDurum = v!)),
-
-                // ---- Temizle ----
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade200,
-                    foregroundColor: Colors.black,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
-                  ),
-                  icon: const Icon(Icons.clear_all, size: 20),
-                  label: const Text("Temizle"),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _simpleField(String label, double width, OutlineInputBorder border, EdgeInsets padding) {
-    return SizedBox(
-      width: width,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 5),
-          TextField(decoration: InputDecoration(border: border, contentPadding: padding)),
-        ],
-      ),
-    );
-  }
-
-  // ------------------- DROPDOWN -------------------
-  Widget _dropdown(String label, List<String> items, String value, Function(String?) onChange) {
-    return SizedBox(
-      width: 200,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-          const SizedBox(height: 5),
-          DropdownButtonFormField(
-            value: value,
-            items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: onChange,
-            decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            ),
+          // Aksiyon Butonları
+          SalesActionButtons(
+            onApprove: _handleApprove,
+            onRevokeApproval: _handleRevokeApproval,
+            onAddProduct: _handleAddProduct,
+            onRemoveProduct: _handleRemoveProduct,
+            onUpdateDimensions: _handleUpdateDimensions,
+            onCancel: _handleCancel,
+            onPackingList: _handlePackingList,
+            onPdfReport: _handlePdfReport,
+            isLoading: _isActionLoading,
           ),
         ],
       ),
     );
   }
 
-  // ------------------- TABLO 1 -------------------
-  Widget _buildDataTable() {
-    return Card(
-      elevation: 3,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text("RezervasyonNO")),
-              DataColumn(label: Text("RezervasyonKodu")),
-              DataColumn(label: Text("Alıcı Firma")),
-              DataColumn(label: Text("Rezervasyon Sorumlusu")),
-              DataColumn(label: Text("Satış Sorumlusu")),
-              DataColumn(label: Text("İşlem Tarihi")),
-              DataColumn(label: Text("Durum")),
-              DataColumn(label: Text("ÜrünÇıkışTarihi")),
-              DataColumn(label: Text("Sevkiyat adresi")),
-            ],
-            rows: const [],
-          ),
+  Widget _buildAppBar() {
+    return AppBar(
+      title: const Text("Satış Yönetimi"),
+      backgroundColor: Colors.white70,
+      centerTitle: false,
+      actions: [
+        // Yenile
+        IconButton(
+          onPressed: _fetchReservations,
+          icon: const Icon(Icons.refresh),
+          tooltip: "Yenile",
         ),
-      ),
+        // Filtre toggle
+        IconButton(
+          icon: Icon(
+            _isFilterExpanded ? Icons.filter_alt_off : Icons.filter_alt,
+          ),
+          onPressed: () {
+            setState(() => _isFilterExpanded = !_isFilterExpanded);
+          },
+          tooltip: _isFilterExpanded ? 'Filtreleri Gizle' : 'Filtreleri Göster',
+        ),
+      ],
     );
   }
 
-  // ------------------- TABLO 2 -------------------
-  Widget _buildDataTable2() {
-    return Card(
-      elevation: 3,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.vertical,
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: DataTable(
-            columns: const [
-              DataColumn(label: Text("RezervasyonNO")),
-              DataColumn(label: Text("RezervasyonKodu")),
-              DataColumn(label: Text("Alıcı Firma")),
-              DataColumn(label: Text("Rezervasyon Sorumlusu")),
-              DataColumn(label: Text("Satış Sorumlusu")),
-              DataColumn(label: Text("İşlem Tarihi")),
-              DataColumn(label: Text("Durum")),
-              DataColumn(label: Text("ÜrünÇıkışTarihi")),
-              DataColumn(label: Text("Sevkiyat adresi")),
-            ],
-            rows: const [],
-          ),
-        ),
-      ),
-    );
-  }
+  // ==================== MESAJ GÖSTERİCİLER ====================
 
-  // ------------------- BUTONLAR -------------------
-  Widget _buildBottomButtons() {
-    return SizedBox(
-      height: 64,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
+  void _showSuccess(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
           children: [
-            _actionBtn("Rapor Oluştur"),
-            _actionBtn("Packing List"),
-            _actionBtn("Seçili Rezervasyona Ürün Ekle"),
-            _actionBtn("Seçili Rezervasyondan Ürün Çıkar"),
-            _actionBtn("Boyutları Güncelle"),
-            _actionBtn("Rezervasyon Onayla"),
-            _actionBtn("Rezervasyon İptal Et"),
-            _actionBtn("Onayı Geri Al"),
+            const Icon(Icons.check_circle, color: AppColors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
           ],
         ),
+        backgroundColor: AppColors.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
 
-  Widget _actionBtn(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
-      child: ElevatedButton(
-        onPressed: () {},
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.grey.shade300,
-          foregroundColor: Colors.black,
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+  void _showWarning(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.warning, color: AppColors.textPrimary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message, style: const TextStyle(color: AppColors.textPrimary))),
+          ],
         ),
-        child: Text(text),
+        backgroundColor: AppColors.warning,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+      ),
+    );
+  }
+
+  void _showError(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: AppColors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 5),
+      ),
+    );
+  }
+
+  void _showInfo(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.info, color: AppColors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: AppColors.info,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
