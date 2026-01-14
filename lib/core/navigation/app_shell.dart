@@ -43,12 +43,12 @@ class AppShell extends StatelessWidget {
             ),
             _DrawerItem(
               icon: Icons.check_circle,
-              label: 'Sales Confirmation',
+              label: 'Satış Onay',
               route: '/sales',
             ),
             _DrawerItem(
               icon: Icons.cancel,
-              label: 'Cancel',
+              label: 'İptal',
               route: '/cancel',
             ),
 
