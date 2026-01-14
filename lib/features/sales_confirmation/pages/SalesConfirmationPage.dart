@@ -1,5 +1,6 @@
 // lib/features/sales_confirmation/pages/SalesConfirmationPage.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/theme/theme.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
@@ -58,14 +59,36 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
   bool _isFilterExpanded = true;
   bool _isActionLoading = false;
 
+  // Debounce timer
+  Timer? _debounceTimer;
+
   @override
   void initState() {
     super.initState();
     _initPage();
+    
+    // Filtre değişikliklerini dinle (debounce ile)
+    _rezervasyonNoController.addListener(_onFilterChanged);
+    _rezervasyonKoduController.addListener(_onFilterChanged);
+    _aliciFirmaController.addListener(_onFilterChanged);
+    _rezervasyonSorumlusuController.addListener(_onFilterChanged);
+    _satisSorumlusuController.addListener(_onFilterChanged);
+    _epcController.addListener(_onFilterChanged);
   }
 
   @override
   void dispose() {
+    // Timer'ı iptal et
+    _debounceTimer?.cancel();
+    
+    // Listener'ları kaldır
+    _rezervasyonNoController.removeListener(_onFilterChanged);
+    _rezervasyonKoduController.removeListener(_onFilterChanged);
+    _aliciFirmaController.removeListener(_onFilterChanged);
+    _rezervasyonSorumlusuController.removeListener(_onFilterChanged);
+    _satisSorumlusuController.removeListener(_onFilterChanged);
+    _epcController.removeListener(_onFilterChanged);
+    
     _rezervasyonNoController.dispose();
     _rezervasyonKoduController.dispose();
     _aliciFirmaController.dispose();
@@ -73,6 +96,19 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
     _satisSorumlusuController.dispose();
     _epcController.dispose();
     super.dispose();
+  }
+
+  /// Filtre değişikliğinde tetiklenir (debounce ile)
+  void _onFilterChanged() {
+    // Önceki timer'ı iptal et
+    _debounceTimer?.cancel();
+    
+    // Yeni timer başlat (300ms debounce)
+    _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        _fetchReservations();
+      }
+    });
   }
 
   /// Sayfa başlangıç yüklemesi

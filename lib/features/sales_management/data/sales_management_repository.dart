@@ -34,7 +34,7 @@ class SalesManagementRepository {
         final epcResponse = await _supabase
             .from(_stockTable)
             .select('RezervasyonNo')
-            .ilike('EPC', '%$epc%')
+            .ilike('EPC', '$epc%')  // Baştan eşleşme
             .not('RezervasyonNo', 'is', null);
 
         epcReservationNos = (epcResponse as List)
@@ -50,21 +50,21 @@ class SalesManagementRepository {
 
       var query = _supabase.from(_reservationTable).select();
 
-      // Filtreler
+      // Filtreler - Baştan eşleşme (prefix match)
       if (rezervasyonNo != null && rezervasyonNo.isNotEmpty) {
-        query = query.ilike('RezervasyonNo', '%$rezervasyonNo%');
+        query = query.ilike('RezervasyonNo', '$rezervasyonNo%');
       }
       if (rezervasyonKodu != null && rezervasyonKodu.isNotEmpty) {
-        query = query.ilike('RezervasyonKodu', '%$rezervasyonKodu%');
+        query = query.ilike('RezervasyonKodu', '$rezervasyonKodu%');
       }
       if (aliciFirma != null && aliciFirma.isNotEmpty) {
-        query = query.ilike('AliciFirma', '%$aliciFirma%');
+        query = query.ilike('AliciFirma', '$aliciFirma%');
       }
       if (rezervasyonSorumlusu != null && rezervasyonSorumlusu.isNotEmpty) {
-        query = query.ilike('RezervasyonSorumlusu', '%$rezervasyonSorumlusu%');
+        query = query.ilike('RezervasyonSorumlusu', '$rezervasyonSorumlusu%');
       }
       if (satisSorumlusu != null && satisSorumlusu.isNotEmpty) {
-        query = query.ilike('SatisSorumlusu', '%$satisSorumlusu%');
+        query = query.ilike('SatisSorumlusu', '$satisSorumlusu%');
       }
       if (durum != null && durum.isNotEmpty && durum != 'Hepsi') {
         query = query.eq('Durum', durum);
