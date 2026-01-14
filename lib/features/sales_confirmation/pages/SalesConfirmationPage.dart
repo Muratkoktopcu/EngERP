@@ -473,100 +473,112 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppColors.backgroundLight,
-      child: Column(
-        children: [
-          // AppBar
-          _buildAppBar(),
-          // İçerik
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Column(
-                children: [
-                  // Filtre Paneli
-                  SalesFilterPanel(
-                    isExpanded: _isFilterExpanded,
-                    rezervasyonNoController: _rezervasyonNoController,
-                    rezervasyonKoduController: _rezervasyonKoduController,
-                    aliciFirmaController: _aliciFirmaController,
-                    rezervasyonSorumlusuController: _rezervasyonSorumlusuController,
-                    satisSorumlusuController: _satisSorumlusuController,
-                    epcController: _epcController,
-                    selectedDate: _selectedDate,
-                    tarihPeriyodu: _tarihPeriyodu,
-                    durum: _durum,
-                    firmaOnerileri: _firmaOnerileri,
-                    onDateTap: _selectDate,
-                    onPeriyotChanged: (value) {
-                      setState(() => _tarihPeriyodu = value!);
-                      _fetchReservations();
-                    },
-                    onDurumChanged: (value) {
-                      setState(() => _durum = value!);
-                      _fetchReservations();
-                    },
-                    onClear: _clearFilters,
-                    onFilter: _fetchReservations,
-                    onFirmaSearch: _searchCompanies,
-                  ),
-                  // Tablolar - Alt Alta
-                  Expanded(
-                    child: Column(
-                      children: [
-                        // Rezervasyon Listesi
-                        Expanded(
-                          flex: 1,
-                          child: SalesReservationTable(
-                            reservations: _reservations,
-                            selectedRezervasyonNo: _selectedReservation?.rezervasyonNo,
-                            onRowTap: (reservation) {
-                              setState(() {
-                                _selectedReservation = reservation;
-                                _selectedProduct = null;
-                              });
-                              _fetchReservationProducts(reservation.rezervasyonNo);
-                            },
-                            isLoading: _isLoading,
-                            onRefresh: _fetchReservations,
-                          ),
+    return Column(
+      children: [
+        // AppBar
+        _buildAppBar(),
+        // BODY
+        Expanded(
+          child: Container(
+            color: AppColors.backgroundLight,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          children: [
+                            // Filtre Paneli
+                            SalesFilterPanel(
+                              isExpanded: _isFilterExpanded,
+                              rezervasyonNoController: _rezervasyonNoController,
+                              rezervasyonKoduController: _rezervasyonKoduController,
+                              aliciFirmaController: _aliciFirmaController,
+                              rezervasyonSorumlusuController: _rezervasyonSorumlusuController,
+                              satisSorumlusuController: _satisSorumlusuController,
+                              epcController: _epcController,
+                              selectedDate: _selectedDate,
+                              tarihPeriyodu: _tarihPeriyodu,
+                              durum: _durum,
+                              firmaOnerileri: _firmaOnerileri,
+                              onDateTap: _selectDate,
+                              onPeriyotChanged: (value) {
+                                setState(() => _tarihPeriyodu = value!);
+                                _fetchReservations();
+                              },
+                              onDurumChanged: (value) {
+                                setState(() => _durum = value!);
+                                _fetchReservations();
+                              },
+                              onClear: _clearFilters,
+                              onFilter: _fetchReservations,
+                              onFirmaSearch: _searchCompanies,
+                            ),
+
+                            // Rezervasyon Listesi
+                            Expanded(
+                              flex: 1,
+                              child: SalesReservationTable(
+                                reservations: _reservations,
+                                selectedRezervasyonNo: _selectedReservation?.rezervasyonNo,
+                                onRowTap: (reservation) {
+                                  setState(() {
+                                    _selectedReservation = reservation;
+                                    _selectedProduct = null;
+                                  });
+                                  _fetchReservationProducts(reservation.rezervasyonNo);
+                                },
+                                isLoading: _isLoading,
+                                onRefresh: _fetchReservations,
+                              ),
+                            ),
+
+                            const SizedBox(height: AppSpacing.md),
+
+                            // Ürün Detayları
+                            Expanded(
+                              flex: 1,
+                              child: SalesDetailTable(
+                                products: _products,
+                                selectedEpc: _selectedProduct?.epc,
+                                onRowTap: (product) {
+                                  setState(() => _selectedProduct = product);
+                                },
+                                isLoading: _isDetailLoading,
+                                rezervasyonNo: _selectedReservation?.rezervasyonNo,
+                              ),
+                            ),
+
+                            const SizedBox(height: AppSpacing.sm),
+
+                            // Aksiyon Butonları
+                            SalesActionButtons(
+                              onApprove: _handleApprove,
+                              onRevokeApproval: _handleRevokeApproval,
+                              onAddProduct: _handleAddProduct,
+                              onRemoveProduct: _handleRemoveProduct,
+                              onUpdateDimensions: _handleUpdateDimensions,
+                              onCancel: _handleCancel,
+                              onPackingList: _handlePackingList,
+                              onPdfReport: _handlePdfReport,
+                              isLoading: _isActionLoading,
+                            ),
+                          ],
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        // Ürün Detayları
-                        Expanded(
-                          flex: 1,
-                          child: SalesDetailTable(
-                            products: _products,
-                            selectedEpc: _selectedProduct?.epc,
-                            onRowTap: (product) {
-                              setState(() => _selectedProduct = product);
-                            },
-                            isLoading: _isDetailLoading,
-                            rezervasyonNo: _selectedReservation?.rezervasyonNo,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ],
-              ),
+                );
+              },
             ),
           ),
-          // Aksiyon Butonları
-          SalesActionButtons(
-            onApprove: _handleApprove,
-            onRevokeApproval: _handleRevokeApproval,
-            onAddProduct: _handleAddProduct,
-            onRemoveProduct: _handleRemoveProduct,
-            onUpdateDimensions: _handleUpdateDimensions,
-            onCancel: _handleCancel,
-            onPackingList: _handlePackingList,
-            onPdfReport: _handlePdfReport,
-            isLoading: _isActionLoading,
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
