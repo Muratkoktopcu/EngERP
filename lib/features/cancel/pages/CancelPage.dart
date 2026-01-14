@@ -8,6 +8,7 @@ import 'package:eng_erp/features/cancel/widgets/cancel_main_table.dart';
 import 'package:eng_erp/features/cancel/widgets/cancel_detail_table.dart';
 import 'package:eng_erp/features/cancel/widgets/cancel_action_buttons.dart';
 import 'package:eng_erp/features/sales_management/data/cancel_archive_model.dart';
+import 'package:eng_erp/features/cancel/services/cancel_report_service.dart';
 
 /// 📋 İptal Yönetimi Sayfası
 /// İptal edilen satış rezervasyonlarını görüntüleme, filtreleme ve yönetme
@@ -220,9 +221,67 @@ class _CancelPageState extends State<CancelPage> {
   }
 
   /// PDF Rapor Oluştur
-  void _onPdfRapor() {
-    // TODO: PDF rapor oluşturma işlemi
-    _showInfoSnackBar('PDF rapor oluşturma yakında eklenecek');
+  Future<void> _onPdfRapor() async {
+    // Validasyon: İptal tarihi ve tarih periyodu gerekli
+    if (_iptalTarihi == null) {
+      _showInfoSnackBar('Lütfen iptal tarihi seçin.');
+      return;
+    }
+
+    if (_iptalList.isEmpty) {
+      _showInfoSnackBar('Rapor oluşturulacak iptal kaydı bulunamadı.');
+      return;
+    }
+
+    setState(() => _isActionLoading = true);
+
+    try {
+      // Her iptal kaydı için ürün detaylarını topla
+      final Map<String, List<RezIptalDetayModel>> detailsMap = {};
+      
+      for (final iptal in _iptalList) {
+        final details = await _cancelService.getIptalDetails(iptal.rezervasyonNo);
+        detailsMap[iptal.rezervasyonNo] = details;
+      }
+
+      // Rapor servisini oluştur
+      final reportService = CancelReportService();
+      
+      // Tarih periyodu açıklamasını oluştur
+      final periodDescription = reportService.buildPeriodDescription(
+        _iptalTarihi,
+        _tarihPeriyodu,
+      );
+
+      // Filtre açıklamasını oluştur
+      final filterDescription = reportService.buildFilterDescription(
+        rezervasyonNo: _rezervasyonNoController.text.trim(),
+        rezervasyonKodu: _rezervasyonKoduController.text.trim(),
+        aliciFirma: _selectedFirma,
+        satisSorumlusu: _satisSorumlusuController.text.trim(),
+        rezervasyonTarihi: _rezervasyonTarihi,
+        iptalTarihi: _iptalTarihi,
+        epc: _epcController.text.trim(),
+        tarihPeriyodu: _tarihPeriyodu,
+      );
+
+      // PDF oluştur
+      final pdfBytes = await reportService.generatePdf(
+        iptalList: _iptalList,
+        detailsMap: detailsMap,
+        period: _tarihPeriyodu,
+        periodDescription: periodDescription,
+        filterDescription: filterDescription,
+      );
+
+      // Yazdırma önizlemesi göster
+      await reportService.showPrintPreview(pdfBytes);
+
+    } catch (e) {
+      _showErrorSnackBar('PDF oluşturma hatası: $e');
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
   }
 
   /// İptal Sebebi Göster
