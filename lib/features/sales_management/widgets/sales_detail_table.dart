@@ -129,7 +129,7 @@ class SalesDetailTable extends StatelessWidget {
                 const Icon(Icons.inventory_2, size: 18, color: AppColors.success),
                 const SizedBox(width: AppSpacing.sm),
                 Text(
-                  'Ürün Detayları - $rezervasyonNo (${products.length} ürün)',
+                  'Ürün Detayları (${products.length} ürün)',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
@@ -152,6 +152,7 @@ class SalesDetailTable extends StatelessWidget {
                   columnSpacing: 20,
                   horizontalMargin: 16,
                   columns: const [
+                    DataColumn(label: Text('Rez. No', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('EPC', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Barkod No', style: TextStyle(fontWeight: FontWeight.bold))),
                     DataColumn(label: Text('Ürün Türü', style: TextStyle(fontWeight: FontWeight.bold))),
@@ -173,6 +174,10 @@ class SalesDetailTable extends StatelessWidget {
                       }),
                       onSelectChanged: (_) => onRowTap(product),
                       cells: [
+                        DataCell(Text(
+                          product.rezervasyonNo ?? '-',
+                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        )),
                         DataCell(
                           ConstrainedBox(
                             constraints: const BoxConstraints(maxWidth: 120),
