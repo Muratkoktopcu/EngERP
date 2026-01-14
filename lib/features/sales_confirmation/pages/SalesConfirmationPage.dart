@@ -14,6 +14,7 @@ import 'package:eng_erp/features/sales_management/widgets/sales_action_buttons.d
 import 'package:eng_erp/features/sales_management/widgets/product_selection_dialog.dart';
 import 'package:eng_erp/features/sales_management/widgets/cancel_reservation_dialog.dart';
 import 'package:eng_erp/features/sales_management/widgets/dimension_update_dialog.dart';
+import 'package:eng_erp/features/sales_management/services/sales_report_service.dart';
 
 /// 📊 Satış Yönetimi Sayfası
 class SalesConfirmationPage extends StatefulWidget {
@@ -501,8 +502,42 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
       return;
     }
 
-    // TODO: PDF rapor oluşturma sayfasına yönlendir
-    _showInfo('PDF Rapor özelliği yakında eklenecek.');
+    setState(() => _isActionLoading = true);
+
+    try {
+      // Her rezervasyon için ürünleri topla
+      final Map<String, List<StockModel>> productsMap = {};
+      
+      for (final reservation in _reservations) {
+        final products = await _service.getReservationProducts(reservation.rezervasyonNo);
+        productsMap[reservation.rezervasyonNo] = products;
+      }
+
+      // Rapor servisini oluştur
+      final reportService = SalesReportService();
+      
+      // Tarih periyodu açıklamasını oluştur
+      final periodDescription = reportService.buildPeriodDescription(
+        _selectedDate,
+        _tarihPeriyodu,
+      );
+
+      // PDF oluştur
+      final pdfBytes = await reportService.generatePdf(
+        reservations: _reservations,
+        productsMap: productsMap,
+        period: _tarihPeriyodu,
+        periodDescription: periodDescription,
+      );
+
+      // Yazdırma önizlemesi göster
+      await reportService.showPrintPreview(pdfBytes);
+
+    } catch (e) {
+      _showError('PDF oluşturma hatası: $e');
+    } finally {
+      setState(() => _isActionLoading = false);
+    }
   }
 
   // ==================== UI BUILD ====================
