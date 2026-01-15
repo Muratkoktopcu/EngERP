@@ -15,6 +15,7 @@ import 'package:eng_erp/features/sales_management/widgets/product_selection_dial
 import 'package:eng_erp/features/sales_management/widgets/cancel_reservation_dialog.dart';
 import 'package:eng_erp/features/sales_management/widgets/dimension_update_dialog.dart';
 import 'package:eng_erp/features/sales_management/services/sales_report_service.dart';
+import 'package:eng_erp/features/sales_management/pages/sales_report_preview_page.dart';
 
 /// 📊 Satış Yönetimi Sayfası
 class SalesConfirmationPage extends StatefulWidget {
@@ -522,21 +523,25 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
         _tarihPeriyodu,
       );
 
-      // PDF oluştur
-      final pdfBytes = await reportService.generatePdf(
-        reservations: _reservations,
-        productsMap: productsMap,
-        period: _tarihPeriyodu,
-        periodDescription: periodDescription,
-      );
+      setState(() => _isActionLoading = false);
 
-      // Yazdırma önizlemesi göster
-      await reportService.showPrintPreview(pdfBytes);
+      // Rapor önizleme sayfasına yönlendir
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => SalesReportPreviewPage(
+              reservations: _reservations,
+              productsMap: productsMap,
+              period: _tarihPeriyodu,
+              periodDescription: periodDescription,
+            ),
+          ),
+        );
+      }
 
     } catch (e) {
-      _showError('PDF oluşturma hatası: $e');
-    } finally {
       setState(() => _isActionLoading = false);
+      _showError('PDF hazırlama hatası: $e');
     }
   }
 
