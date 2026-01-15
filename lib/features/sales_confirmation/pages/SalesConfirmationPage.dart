@@ -603,11 +603,20 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
                                 reservations: _reservations,
                                 selectedRezervasyonNo: _selectedReservation?.rezervasyonNo,
                                 onRowTap: (reservation) {
-                                  setState(() {
-                                    _selectedReservation = reservation;
-                                    _selectedProduct = null;
-                                  });
-                                  _fetchReservationProducts(reservation.rezervasyonNo);
+                                  // Toggle: Aynı satıra tıklanırsa seçimi kaldır
+                                  if (_selectedReservation?.rezervasyonNo == reservation.rezervasyonNo) {
+                                    setState(() {
+                                      _selectedReservation = null;
+                                      _selectedProduct = null;
+                                      _products = [];
+                                    });
+                                  } else {
+                                    setState(() {
+                                      _selectedReservation = reservation;
+                                      _selectedProduct = null;
+                                    });
+                                    _fetchReservationProducts(reservation.rezervasyonNo);
+                                  }
                                 },
                                 isLoading: _isLoading,
                                 onRefresh: _fetchReservations,
@@ -623,7 +632,12 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
                                 products: _products,
                                 selectedEpc: _selectedProduct?.epc,
                                 onRowTap: (product) {
-                                  setState(() => _selectedProduct = product);
+                                  // Toggle: Aynı satıra tıklanırsa seçimi kaldır
+                                  if (_selectedProduct?.epc == product.epc) {
+                                    setState(() => _selectedProduct = null);
+                                  } else {
+                                    setState(() => _selectedProduct = product);
+                                  }
                                 },
                                 isLoading: _isDetailLoading,
                                 rezervasyonNo: _selectedReservation?.rezervasyonNo,
