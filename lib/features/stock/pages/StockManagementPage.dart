@@ -9,6 +9,7 @@ import 'package:eng_erp/features/stock/widgets/stock_action_buttons.dart';
 import 'package:eng_erp/features/stock/pages/stock_report_preview_page.dart';
 import 'package:eng_erp/features/stock/widgets/reservation_info_dialog.dart';
 import 'package:eng_erp/features/reservation/data/reservation_service.dart';
+import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 
 class StokYonetimiPage extends StatefulWidget {
   const StokYonetimiPage({super.key});
@@ -111,10 +112,8 @@ class _StokYonetimiPageState extends State<StokYonetimiPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        AppBar(
-          title: const Text("Stok Yönetimi"),
-          backgroundColor: Colors.white70,
-          centerTitle: false,
+        const CustomAppBar(
+          title: 'Stok Yönetimi',
         ),
         Expanded(
           child: Container(

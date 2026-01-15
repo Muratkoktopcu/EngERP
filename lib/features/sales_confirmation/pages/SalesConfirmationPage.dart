@@ -4,6 +4,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/theme/theme.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 import 'package:eng_erp/features/reservation/data/reservation_model.dart';
 import 'package:eng_erp/features/stock/data/stock_model.dart';
 import 'package:eng_erp/features/sales_management/data/sales_management_service.dart';
@@ -673,10 +674,8 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
   }
 
   Widget _buildAppBar() {
-    return AppBar(
-      title: const Text("Satış Yönetimi"),
-      backgroundColor: Colors.white70,
-      centerTitle: false,
+    return CustomAppBar(
+      title: 'Satış Yönetimi',
       actions: [
         // Yenile
         IconButton(

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/theme/theme.dart';
+import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 import 'package:eng_erp/features/cancel/data/cancel_service.dart';
 import 'package:eng_erp/features/cancel/widgets/cancel_filter_panel.dart';
 import 'package:eng_erp/features/cancel/widgets/cancel_main_table.dart';
@@ -538,18 +539,8 @@ class _CancelPageState extends State<CancelPage> {
     return Column(
       children: [
         // APPBAR
-        PreferredSize(
-          preferredSize: const Size.fromHeight(56),
-          child: AppBar(
-            title: const Text(
-              'İPTAL YÖNETİMİ',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            centerTitle: false,
-            elevation: 2,
-          ),
+        const CustomAppBar(
+          title: 'İptal Yönetimi',
         ),
 
         // BODY

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 import 'package:eng_erp/features/stock/data/stock_model.dart';
 import 'package:eng_erp/features/stock/data/stock_service.dart';
 import 'package:eng_erp/features/reservation/data/company_model.dart';
@@ -296,10 +297,8 @@ class _ReservationPageState extends State<ReservationPage> {
       child: Column(
       children: [
         // AppBar
-        AppBar(
-          title: const Text("Rezervasyon Oluşturma"),
-          backgroundColor: Colors.white70,
-          centerTitle: false,
+        CustomAppBar(
+          title: 'Rezervasyon',
           actions: [
             IconButton(
               onPressed: _fetchStockData,
