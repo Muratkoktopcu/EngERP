@@ -1,6 +1,7 @@
 // lib/features/reservation/widgets/reservation_filter_panel.dart
 
 import 'package:flutter/material.dart';
+import 'package:eng_erp/core/theme/theme.dart';
 import 'package:eng_erp/features/stock/pages/barcode_scanner_page.dart';
 
 /// Rezervasyon sayfası için stok filtreleme paneli
@@ -61,103 +62,135 @@ class _ReservationFilterPanelState extends State<ReservationFilterPanel> {
   Widget build(BuildContext context) {
     return Align(
       alignment: Alignment.centerLeft,
-      child: Card(
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-        child: Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                // Barkod filtresi
-                SizedBox(
-                  width: 300,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        "Barkod ile Ara",
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                      ),
-                      const SizedBox(height: 5),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: _barkodController,
-                              onChanged: _onBarkodTextChanged,
-                              onSubmitted: (_) => widget.onFilter(),
-                              decoration: InputDecoration(
-                                hintText: "Barkod numarası girin...",
-                                hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-                                prefixIcon: const Icon(Icons.search, size: 20),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 8,
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(
-                            onPressed: _openBarcodeScanner,
-                            icon: const Icon(Icons.qr_code_scanner, size: 18),
-                            label: const Text("Barkodu Oku"),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade600,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 14,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(width: 16),
-
-                // Filtrele butonu
-                ElevatedButton.icon(
-                  onPressed: widget.onFilter,
-                  icon: const Icon(Icons.filter_list, size: 18),
-                  label: const Text("Filtrele"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade600,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // Filtreleri temizle butonu
-                ElevatedButton.icon(
-                  onPressed: () {
-                    _barkodController.clear();
-                    widget.onBarkodChanged('');
-                    widget.onClearFilters();
-                  },
-                  icon: const Icon(Icons.clear_all, size: 18),
-                  label: const Text("Temizle"),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red.shade400,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                ),
-              ],
+      child: Container(
+        padding: const EdgeInsets.all(12.0),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadow.withOpacity(0.1),
+              blurRadius: 8,
+              offset: const Offset(0, -2),
             ),
+          ],
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Barkod filtresi
+              SizedBox(
+                width: 300,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Barkod ile Ara",
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _barkodController,
+                            onChanged: _onBarkodTextChanged,
+                            onSubmitted: (_) => widget.onFilter(),
+                            decoration: InputDecoration(
+                              hintText: "Barkod numarası girin...",
+                              hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                borderSide: const BorderSide(color: AppColors.border),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                borderSide: const BorderSide(color: AppColors.border),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(AppRadius.sm),
+                                borderSide: const BorderSide(color: AppColors.primary),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildActionButton(
+                          label: 'Barkodu Oku',
+                          icon: Icons.qr_code_scanner,
+                          onPressed: _openBarcodeScanner,
+                          color: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 16),
+
+              // Filtrele butonu
+              _buildActionButton(
+                label: 'Filtrele',
+                icon: Icons.filter_list,
+                onPressed: widget.onFilter,
+                color: AppColors.success,
+              ),
+
+              const SizedBox(width: 8),
+
+              // Filtreleri temizle butonu
+              _buildActionButton(
+                label: 'Temizle',
+                icon: Icons.clear_all,
+                onPressed: () {
+                  _barkodController.clear();
+                  widget.onBarkodChanged('');
+                  widget.onClearFilters();
+                },
+                color: AppColors.error,
+              ),
+            ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          side: BorderSide(color: color.withOpacity(0.3)),
+        ),
+        disabledBackgroundColor: AppColors.grey200,
+        disabledForegroundColor: AppColors.textDisabled,
+      ),
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
         ),
       ),
     );
