@@ -3,7 +3,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/theme/theme.dart';
-import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/services/user_service.dart';
 import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 import 'package:eng_erp/features/reservation/data/reservation_model.dart';
 import 'package:eng_erp/features/stock/data/stock_model.dart';
@@ -121,20 +121,11 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
     await _fetchReservations();
   }
 
-  /// Aktif kullanıcıyı yükle
+  /// Aktif kullanıcıyı yükle (UserService üzerinden displayName alır)
   Future<void> _loadCurrentUser() async {
-    try {
-      final user = SupabaseClientManager().db.auth.currentUser;
-      if (user != null) {
-        setState(() {
-          _currentUser = user.userMetadata?['displayName'] as String? ??
-              user.email ??
-              'Bilinmeyen';
-        });
-      }
-    } catch (e) {
-      debugPrint('Kullanıcı bilgisi alınamadı: $e');
-    }
+    setState(() {
+      _currentUser = UserService.instance.displayName;
+    });
   }
 
   /// Rezervasyonları getir

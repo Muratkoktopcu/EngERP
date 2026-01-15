@@ -1,7 +1,7 @@
 // lib/features/reservation/pages/ReservationPage.dart
 
 import 'package:flutter/material.dart';
-import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/services/user_service.dart';
 import 'package:eng_erp/core/widgets/custom_app_bar.dart';
 import 'package:eng_erp/features/stock/data/stock_model.dart';
 import 'package:eng_erp/features/stock/data/stock_service.dart';
@@ -85,18 +85,11 @@ class _ReservationPageState extends State<ReservationPage> {
     _loadCurrentUser();
   }
 
-  /// Aktif kullanıcıyı yükle
+  /// Aktif kullanıcıyı yükle (UserService üzerinden displayName alır)
   void _loadCurrentUser() {
-    try {
-      final user = SupabaseClientManager().auth.currentUser;
-      if (user != null) {
-        setState(() {
-          _rezervasyonSorumlusu = user.email ?? user.id;
-        });
-      }
-    } catch (e) {
-      debugPrint('Kullanıcı bilgisi alınamadı: $e');
-    }
+    setState(() {
+      _rezervasyonSorumlusu = UserService.instance.displayName;
+    });
   }
 
   /// Stok verilerini çek
