@@ -219,7 +219,7 @@ class _SalesConfirmationPageState extends State<SalesConfirmationPage> {
       _rezervasyonSorumlusuController.clear();
       _satisSorumlusuController.clear();
       _epcController.clear();
-      _selectedDate = DateTime.now();
+      _selectedDate = null; // Tarih filtresini kaldır
       _tarihPeriyodu = 'Günlük';
       _durum = 'Hepsi';
     });
