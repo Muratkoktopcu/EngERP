@@ -9,6 +9,7 @@ import 'package:eng_erp/features/cancel/widgets/cancel_detail_table.dart';
 import 'package:eng_erp/features/cancel/widgets/cancel_action_buttons.dart';
 import 'package:eng_erp/features/sales_management/data/cancel_archive_model.dart';
 import 'package:eng_erp/features/cancel/services/cancel_report_service.dart';
+import 'package:eng_erp/features/cancel/pages/cancel_report_preview_page.dart';
 
 /// 📋 İptal Yönetimi Sayfası
 /// İptal edilen satış rezervasyonlarını görüntüleme, filtreleme ve yönetme
@@ -265,22 +266,26 @@ class _CancelPageState extends State<CancelPage> {
         tarihPeriyodu: _tarihPeriyodu,
       );
 
-      // PDF oluştur
-      final pdfBytes = await reportService.generatePdf(
-        iptalList: _iptalList,
-        detailsMap: detailsMap,
-        period: _tarihPeriyodu,
-        periodDescription: periodDescription,
-        filterDescription: filterDescription,
-      );
+      setState(() => _isActionLoading = false);
 
-      // Yazdırma önizlemesi göster
-      await reportService.showPrintPreview(pdfBytes);
+      // Rapor önizleme sayfasına yönlendir
+      if (mounted) {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => CancelReportPreviewPage(
+              iptalList: _iptalList,
+              detailsMap: detailsMap,
+              period: _tarihPeriyodu,
+              periodDescription: periodDescription,
+              filterDescription: filterDescription,
+            ),
+          ),
+        );
+      }
 
     } catch (e) {
-      _showErrorSnackBar('PDF oluşturma hatası: $e');
-    } finally {
       setState(() => _isActionLoading = false);
+      _showErrorSnackBar('PDF hazırlama hatası: $e');
     }
   }
 
