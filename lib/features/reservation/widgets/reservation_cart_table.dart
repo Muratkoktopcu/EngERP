@@ -118,19 +118,27 @@ class ReservationCartTable extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text("EPC")),
-                    DataColumn(label: Text("BarkodNo")),
-                    DataColumn(label: Text("BandılNo")),
-                    DataColumn(label: Text("ÜrünTipi")),
-                    DataColumn(label: Text("ÜrünTürü")),
-                    DataColumn(label: Text("StokEn")),
-                    DataColumn(label: Text("StokBoy")),
-                    DataColumn(label: Text("SatışEn", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("SatışBoy", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("SatışAlan", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("SatışTonaj", style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold))),
+                  showCheckboxColumn: true,
+                  headingRowColor: WidgetStateProperty.all(Colors.white),
+                  headingRowHeight: 48,
+                  dividerThickness: 0,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+                    ),
+                  ),
+                  columns: [
+                    DataColumn(label: _buildHeaderCell('EPC')),
+                    DataColumn(label: _buildHeaderCell('Barkod No')),
+                    DataColumn(label: _buildHeaderCell('Bandıl No')),
+                    DataColumn(label: _buildHeaderCell('Ürün Tipi')),
+                    DataColumn(label: _buildHeaderCell('Ürün Türü')),
+                    DataColumn(label: _buildHeaderCell('Stok En')),
+                    DataColumn(label: _buildHeaderCell('Stok Boy')),
+                    DataColumn(label: _buildHeaderCell('Satış En', isHighlight: true)),
+                    DataColumn(label: _buildHeaderCell('Satış Boy', isHighlight: true)),
+                    DataColumn(label: _buildHeaderCell('Satış Alan', isHighlight: true)),
+                    DataColumn(label: _buildHeaderCell('Satış Tonaj', isHighlight: true)),
                   ],
                   rows: cartItems.map((stock) {
                     final isSelected = selectedCartItem?.epc == stock.epc;
@@ -183,6 +191,30 @@ class ReservationCartTable extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  /// Modern minimalist header cell builder
+  Widget _buildHeaderCell(String text, {bool isHighlight = false}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: isHighlight ? Colors.blue.shade600 : Colors.green.shade600,
+            width: 2,
+          ),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          color: isHighlight ? Colors.blue.shade700 : Colors.grey.shade800,
+          letterSpacing: 0.3,
+        ),
       ),
     );
   }

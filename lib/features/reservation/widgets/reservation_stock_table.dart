@@ -125,24 +125,32 @@ class ReservationStockTable extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: DataTable(
-                  showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text("EPC")),
-                    DataColumn(label: Text("BarkodNo")),
-                    DataColumn(label: Text("BandılNo")),
-                    DataColumn(label: Text("PlakaNo")),
-                    DataColumn(label: Text("ÜrünTipi")),
-                    DataColumn(label: Text("ÜrünTürü")),
-                    DataColumn(label: Text("Yüzeyİşlemi")),
-                    DataColumn(label: Text("Seleksiyon")),
-                    DataColumn(label: Text("ÜretimTarihi")),
-                    DataColumn(label: Text("Kalinlik")),
-                    DataColumn(label: Text("PlakaAdedi")),
-                    DataColumn(label: Text("StokEn")),
-                    DataColumn(label: Text("StokBoy")),
-                    DataColumn(label: Text("StokAlan")),
-                    DataColumn(label: Text("StokTonaj")),
-                    DataColumn(label: Text("Durum")),
+                  showCheckboxColumn: true,
+                  headingRowColor: WidgetStateProperty.all(Colors.white),
+                  headingRowHeight: 48,
+                  dividerThickness: 0,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFE0E0E0), width: 1.5),
+                    ),
+                  ),
+                  columns: [
+                    DataColumn(label: _buildHeaderCell('EPC')),
+                    DataColumn(label: _buildHeaderCell('Barkod No')),
+                    DataColumn(label: _buildHeaderCell('Bandıl No')),
+                    DataColumn(label: _buildHeaderCell('Plaka No')),
+                    DataColumn(label: _buildHeaderCell('Ürün Tipi')),
+                    DataColumn(label: _buildHeaderCell('Ürün Türü')),
+                    DataColumn(label: _buildHeaderCell('Yüzey İşlemi')),
+                    DataColumn(label: _buildHeaderCell('Seleksiyon')),
+                    DataColumn(label: _buildHeaderCell('Üretim Tarihi')),
+                    DataColumn(label: _buildHeaderCell('Kalınlık')),
+                    DataColumn(label: _buildHeaderCell('Plaka Adedi')),
+                    DataColumn(label: _buildHeaderCell('Stok En')),
+                    DataColumn(label: _buildHeaderCell('Stok Boy')),
+                    DataColumn(label: _buildHeaderCell('Stok Alan')),
+                    DataColumn(label: _buildHeaderCell('Stok Tonaj')),
+                    DataColumn(label: _buildHeaderCell('Durum')),
                   ],
                   rows: stockList.map((stock) {
                     final isSelected = selectedStock?.id == stock.id;
@@ -224,6 +232,30 @@ class ReservationStockTable extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w500,
           color: textColor,
+        ),
+      ),
+    );
+  }
+
+  /// Modern minimalist header cell builder
+  Widget _buildHeaderCell(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.blue.shade600,
+            width: 2,
+          ),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          color: Colors.grey.shade800,
+          letterSpacing: 0.3,
         ),
       ),
     );
