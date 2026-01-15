@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:eng_erp/core/theme/theme.dart';
 import 'package:eng_erp/features/stock/pages/barcode_scanner_page.dart';
 
 /// Filtre paneli için kullanılan data class
@@ -254,63 +255,66 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: SizedBox(
-          height: 140,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildInput("EPC", epcController),
-                _buildInput("Barkod", barkodController, hasButton: true, buttonText: "Barkodu Oku", onButtonPressed: _openBarcodeScanner),
-                _buildInput("Bandıl No", bandilController),
-                _buildInput("Üretim Tarihi", uretimTarihiController, isDate: true),
-                _buildDropdown("Tarih Periyodu", periyotList, tarihPeriyodu, (v) {
-                  setState(() => tarihPeriyodu = v!);
-                  _notifyChange();
-                }),
-                _buildInput("Plaka No", plakaController),
-                _buildDropdown("Ürün Tipi", secenek, urunTipi, (v) {
-                  setState(() => urunTipi = v);
-                  _notifyChange();
-                }),
-                _buildDropdown("Ürün Türü", secenekTuru, urunTuru, (v) {
-                  setState(() => urunTuru = v);
-                  _notifyChange();
-                }),
-                _buildDropdown("Yüzey İşlemi", secenekYuzeyIslemi, yuzeyIslemi, (v) {
-                  setState(() => yuzeyIslemi = v);
-                  _notifyChange();
-                }),
-                _buildDropdown("Durum ile Filtrele", durumFiltre, filtreDurum, (v) {
-                  setState(() => filtreDurum = v);
-                  _notifyChange();
-                }),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("", style: TextStyle(fontSize: 13)),
-                    const SizedBox(height: 5),
-                    ElevatedButton.icon(
-                      onPressed: _clearAllFilters,
-                      icon: const Icon(Icons.clear_all, size: 20),
-                      label: const Text("Filtreleri Temizle"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade400,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+    return Container(
+      padding: const EdgeInsets.all(12.0),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadow.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: SizedBox(
+        height: 90,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildInput("EPC", epcController),
+              _buildInput("Barkod", barkodController, hasButton: true, buttonText: "Barkodu Oku", onButtonPressed: _openBarcodeScanner),
+              _buildInput("Bandıl No", bandilController),
+              _buildInput("Üretim Tarihi", uretimTarihiController, isDate: true),
+              _buildDropdown("Tarih Periyodu", periyotList, tarihPeriyodu, (v) {
+                setState(() => tarihPeriyodu = v!);
+                _notifyChange();
+              }),
+              _buildInput("Plaka No", plakaController),
+              _buildDropdown("Ürün Tipi", secenek, urunTipi, (v) {
+                setState(() => urunTipi = v);
+                _notifyChange();
+              }),
+              _buildDropdown("Ürün Türü", secenekTuru, urunTuru, (v) {
+                setState(() => urunTuru = v);
+                _notifyChange();
+              }),
+              _buildDropdown("Yüzey İşlemi", secenekYuzeyIslemi, yuzeyIslemi, (v) {
+                setState(() => yuzeyIslemi = v);
+                _notifyChange();
+              }),
+              _buildDropdown("Durum ile Filtrele", durumFiltre, filtreDurum, (v) {
+                setState(() => filtreDurum = v);
+                _notifyChange();
+              }),
+              const SizedBox(width: 16),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text("", style: TextStyle(fontSize: 13)),
+                  const SizedBox(height: 5),
+                  _buildActionButton(
+                    label: 'Filtreleri Temizle',
+                    icon: Icons.clear_all,
+                    onPressed: _clearAllFilters,
+                    color: AppColors.error,
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
       ),
@@ -337,7 +341,18 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
                   decoration: InputDecoration(
                     hintText: isDate ? "Tarih seçin..." : null,
                     hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: const BorderSide(color: AppColors.border),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                      borderSide: const BorderSide(color: AppColors.primary),
+                    ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     suffixIcon: isDate
                         ? Row(
@@ -352,7 +367,7 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
                                   },
                                   tooltip: "Tarihi Temizle",
                                 ),
-                              Icon(Icons.calendar_month, size: 20, color: Colors.blue.shade700),
+                              Icon(Icons.calendar_month, size: 20, color: AppColors.primary),
                               const SizedBox(width: 8),
                             ],
                           )
@@ -362,14 +377,11 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
               ),
               if (hasButton) const SizedBox(width: 6),
               if (hasButton)
-                ElevatedButton.icon(
-                  onPressed: onButtonPressed,
-                  icon: const Icon(Icons.qr_code_scanner, size: 18),
-                  label: Text(buttonText ?? "..."),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.shade600,
-                    foregroundColor: Colors.white,
-                  ),
+                _buildActionButton(
+                  label: buttonText ?? "...",
+                  icon: Icons.qr_code_scanner,
+                  onPressed: onButtonPressed ?? () {},
+                  color: AppColors.primary,
                 ),
             ],
           ),
@@ -393,10 +405,52 @@ class _StockFilterPanelState extends State<StockFilterPanel> {
             onChanged: onChange,
             decoration: InputDecoration(
               contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(6)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+                borderSide: const BorderSide(color: AppColors.primary),
+              ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildActionButton({
+    required String label,
+    required IconData icon,
+    required VoidCallback onPressed,
+    required Color color,
+  }) {
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.1),
+        foregroundColor: color,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          side: BorderSide(color: color.withOpacity(0.3)),
+        ),
+        disabledBackgroundColor: AppColors.grey200,
+        disabledForegroundColor: AppColors.textDisabled,
+      ),
+      icon: Icon(icon, size: 18),
+      label: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+        ),
       ),
     );
   }
