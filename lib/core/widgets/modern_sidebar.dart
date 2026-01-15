@@ -21,6 +21,7 @@ class NavItem {
 /// 🎨 Modern Sidebar Widget
 /// Premium tasarımlı, animasyonlu navigation drawer
 class ModernSidebar extends StatelessWidget {
+  final String? userDisplayName;
   final String? userEmail;
   final String? userRole;
   final String currentRoute;
@@ -29,6 +30,7 @@ class ModernSidebar extends StatelessWidget {
 
   const ModernSidebar({
     super.key,
+    this.userDisplayName,
     this.userEmail,
     this.userRole,
     required this.currentRoute,
@@ -161,7 +163,7 @@ class ModernSidebar extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'ENG ERP',
+                'AFSUAM',
                 style: TextStyle(
                   color: AppColors.white,
                   fontSize: 22,
@@ -209,11 +211,14 @@ class ModernSidebar extends StatelessWidget {
               ),
               shape: BoxShape.circle,
             ),
-            child: const Center(
-              child: Icon(
-                Icons.person,
-                color: AppColors.white,
-                size: 24,
+            child: Center(
+              child: Text(
+                _getInitials(),
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ),
@@ -224,7 +229,7 @@ class ModernSidebar extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  userEmail ?? 'Kullanıcı',
+                  userDisplayName ?? userEmail ?? 'Kullanıcı',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
@@ -247,6 +252,20 @@ class ModernSidebar extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Kullanıcı adından baş harfleri alır
+  String _getInitials() {
+    final name = userDisplayName ?? userEmail ?? '';
+    if (name.isEmpty) return '?';
+    
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    } else if (parts.isNotEmpty && parts[0].isNotEmpty) {
+      return parts[0][0].toUpperCase();
+    }
+    return '?';
   }
 
   Widget _buildLogoutButton(BuildContext context) {

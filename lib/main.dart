@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/services/user_service.dart';
 import 'package:eng_erp/features/auth/data/auth_service.dart';
 import 'package:eng_erp/core/navigation/app_router.dart';
 import 'package:eng_erp/core/theme/theme.dart'; // 🎨 DESIGN TOKENS
@@ -26,9 +27,27 @@ Future<void> testAuth() async {
   }
 }
 
+/// Uygulama başlarken mevcut session varsa kullanıcı profilini yükler
+Future<void> _loadExistingUserProfile() async {
+  final authService = AuthService();
+  final currentUser = authService.getCurrentUser();
+  
+  if (currentUser != null) {
+    debugPrint('📥 Mevcut session bulundu, profil yükleniyor...');
+    await UserService.instance.loadUserProfile(currentUser.userId);
+    UserService.instance.printUserInfo();
+  } else {
+    debugPrint('🔓 Mevcut session yok, login gerekiyor');
+  }
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseClientManager().initialize();
+  
+  // Mevcut session varsa kullanıcı profilini yükle
+  await _loadExistingUserProfile();
+  
   //await testAuth();
 
   runApp(const EngErp());

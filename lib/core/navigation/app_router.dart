@@ -2,8 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:eng_erp/core/services/supabase_client.dart';
+import 'package:eng_erp/core/services/user_service.dart';
 import 'package:eng_erp/features/auth/data/auth_service.dart';
 
 // Pages
@@ -17,14 +19,33 @@ import '../../features/cancel/pages/CancelPage.dart';
 import '../navigation/app_shell.dart';
 
 /// Supabase auth değişince GoRouter refresh etsin diye
+/// Ayrıca kullanıcı profilini de yükler
 class SupabaseAuthNotifier extends ChangeNotifier {
-  late final StreamSubscription _sub;
+  late final StreamSubscription<AuthState> _sub;
 
   SupabaseAuthNotifier() {
     // ⚠️ burada NEW yaratma: initialize edilmiş aynı instance'ı kullan
     final supabase = SupabaseClientManager().db;
 
-    _sub = supabase.auth.onAuthStateChange.listen((_) {
+    _sub = supabase.auth.onAuthStateChange.listen((authState) async {
+      final event = authState.event;
+      final session = authState.session;
+      
+      debugPrint('🔐 Auth state değişti: $event');
+      
+      // Session varsa ve sign in/token refresh ise profil yükle
+      if (session != null) {
+        if (event == AuthChangeEvent.signedIn || 
+            event == AuthChangeEvent.tokenRefreshed) {
+          debugPrint('📥 Auth event: $event - Profil yükleniyor...');
+          await UserService.instance.loadUserProfile(session.user.id);
+        }
+      } else if (event == AuthChangeEvent.signedOut) {
+        // Çıkış yapıldıysa profili temizle
+        debugPrint('🧹 Signed out - Profil temizleniyor');
+        UserService.instance.clearUserProfile();
+      }
+      
       notifyListeners();
     });
   }

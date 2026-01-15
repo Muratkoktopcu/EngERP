@@ -2,6 +2,7 @@
 
 import 'package:eng_erp/features/auth/data/auth_model.dart';
 import 'package:eng_erp/features/auth/data/auth_repository.dart';
+import 'package:eng_erp/core/services/user_service.dart';
 
 class AuthService {
   // Service, Repository'i kullanır.
@@ -25,7 +26,12 @@ class AuthService {
 
     // 2. Her şey uygunsa Repository çağrılır
     try {
-      return await _repository.login(email.trim(), password.trim());
+      final authModel = await _repository.login(email.trim(), password.trim());
+      
+      // 3. Kullanıcı profilini yükle
+      await UserService.instance.loadUserProfile(authModel.userId);
+      
+      return authModel;
     } catch (e) {
       // Gerekirse hatayı loglayabilir veya değiştirebilirsin
       rethrow;
@@ -44,13 +50,20 @@ class AuthService {
     }
 
     // 2. Kurallar geçildiyse kayıt işlemini başlat
-    return await _repository.register(email.trim(), password.trim());
+    final authModel = await _repository.register(email.trim(), password.trim());
+    
+    // 3. Kullanıcı profilini yükle (varsa)
+    await UserService.instance.loadUserProfile(authModel.userId);
+    
+    return authModel;
   }
 
   /// LOGOUT SERVICE
   Future<void> logout() async {
-    // Çıkış yapmadan önce yapılması gereken temizlikler varsa burada yapılır.
-    // Örn: LocalStorage temizleme, Analytics event atma vb.
+    // 1. Kullanıcı state'ini temizle
+    UserService.instance.clearUserProfile();
+    
+    // 2. Çıkış yapmadan önce yapılması gereken temizlikler varsa burada yapılır.
     await _repository.logout();
   }
 
