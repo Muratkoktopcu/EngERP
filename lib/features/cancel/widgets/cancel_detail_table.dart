@@ -125,27 +125,34 @@ class CancelDetailTable extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.grey200),
+                  headingRowColor: WidgetStateProperty.all(Colors.white),
+                  headingRowHeight: 48,
                   dataRowMinHeight: 44,
                   dataRowMaxHeight: 56,
                   columnSpacing: 20,
                   horizontalMargin: 16,
-                  columns: const [
-                    DataColumn(label: Text('Rez. No', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('EPC', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Barkod No', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Bandil No', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Plaka No', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Ürün Tipi', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Ürün Türü', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Yüzey İşlemi', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Seleksiyon', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Kalınlık', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                    DataColumn(label: Text('Stok Boyut', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Satış Boyut', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Stok Alan', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                    DataColumn(label: Text('Satış Alan', style: TextStyle(fontWeight: FontWeight.bold)), numeric: true),
-                    DataColumn(label: Text('Durum', style: TextStyle(fontWeight: FontWeight.bold))),
+                  dividerThickness: 0,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.grey200, width: 1.5),
+                    ),
+                  ),
+                  columns: [
+                    DataColumn(label: _buildHeaderCell('Rez. No')),
+                    DataColumn(label: _buildHeaderCell('EPC')),
+                    DataColumn(label: _buildHeaderCell('Barkod No')),
+                    DataColumn(label: _buildHeaderCell('Bandil No')),
+                    DataColumn(label: _buildHeaderCell('Plaka No')),
+                    DataColumn(label: _buildHeaderCell('Ürün Tipi')),
+                    DataColumn(label: _buildHeaderCell('Ürün Türü')),
+                    DataColumn(label: _buildHeaderCell('Yüzey İşlemi')),
+                    DataColumn(label: _buildHeaderCell('Seleksiyon')),
+                    DataColumn(label: _buildHeaderCell('Kalınlık'), numeric: true),
+                    DataColumn(label: _buildHeaderCell('Stok Boyut')),
+                    DataColumn(label: _buildHeaderCell('Satış Boyut')),
+                    DataColumn(label: _buildHeaderCell('Stok Alan'), numeric: true),
+                    DataColumn(label: _buildHeaderCell('Satış Alan'), numeric: true),
+                    DataColumn(label: _buildHeaderCell('Durum')),
                   ],
                   rows: detayList.map((detay) {
                     return DataRow(
@@ -225,5 +232,29 @@ class CancelDetailTable extends StatelessWidget {
   String _formatNumber(double? value) {
     if (value == null) return '-';
     return value.toStringAsFixed(2);
+  }
+
+  /// Modern minimalist header cell builder
+  Widget _buildHeaderCell(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.orange.shade600,
+            width: 2,
+          ),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          color: Colors.grey.shade800,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
   }
 }

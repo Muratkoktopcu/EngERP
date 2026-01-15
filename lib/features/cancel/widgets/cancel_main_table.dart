@@ -106,20 +106,27 @@ class CancelMainTable extends StatelessWidget {
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(AppColors.grey200),
+                  headingRowColor: WidgetStateProperty.all(Colors.white),
+                  headingRowHeight: 48,
                   dataRowMinHeight: 44,
                   dataRowMaxHeight: 56,
                   columnSpacing: 24,
                   horizontalMargin: 16,
-                  columns: const [
-                    DataColumn(label: Text('Rez. No', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Rez. Kodu', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Alıcı Firma', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Satış Sorumlusu', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('İşlem Tarihi', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('İptal Tarihi', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('İptal Eden', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('İptal Sebebi', style: TextStyle(fontWeight: FontWeight.bold))),
+                  dividerThickness: 0,
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      bottom: BorderSide(color: AppColors.grey200, width: 1.5),
+                    ),
+                  ),
+                  columns: [
+                    DataColumn(label: _buildHeaderCell('Rez. No')),
+                    DataColumn(label: _buildHeaderCell('Rez. Kodu')),
+                    DataColumn(label: _buildHeaderCell('Alıcı Firma')),
+                    DataColumn(label: _buildHeaderCell('Satış Sorumlusu')),
+                    DataColumn(label: _buildHeaderCell('İşlem Tarihi')),
+                    DataColumn(label: _buildHeaderCell('İptal Tarihi')),
+                    DataColumn(label: _buildHeaderCell('İptal Eden')),
+                    DataColumn(label: _buildHeaderCell('İptal Sebebi')),
                   ],
                   rows: iptalList.map((iptal) {
                     final isSelected = selectedIptal?.rezervasyonNo == iptal.rezervasyonNo;
@@ -172,5 +179,29 @@ class CancelMainTable extends StatelessWidget {
   String _formatDate(DateTime? date) {
     if (date == null) return '-';
     return '${date.day.toString().padLeft(2, '0')}.${date.month.toString().padLeft(2, '0')}.${date.year}';
+  }
+
+  /// Modern minimalist header cell builder
+  Widget _buildHeaderCell(String text) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      decoration: const BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: AppColors.error,
+            width: 2,
+          ),
+        ),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: FontWeight.w600,
+          fontSize: 13,
+          color: Colors.grey.shade800,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
   }
 }
