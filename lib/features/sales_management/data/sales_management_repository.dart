@@ -282,7 +282,7 @@ class SalesManagementRepository {
       var query = _supabase.from(_stockTable).select().eq('Durum', 'Stokta');
 
       if (searchTerm != null && searchTerm.isNotEmpty) {
-        query = query.or('EPC.ilike.%$searchTerm%,BarkodNo.ilike.%$searchTerm%');
+        query = query.or('EPC.ilike.$searchTerm%,BarkodNo.ilike.$searchTerm%');
       }
 
       final response = await query.limit(100);
